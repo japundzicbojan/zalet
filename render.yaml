@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: zalet
+    runtime: node
+    plan: starter
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: FIRECRAWL_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: FAL_KEY
+        sync: false
+      - key: DAYTONA_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_CONVEX_URL
+        sync: false
