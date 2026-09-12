@@ -14,7 +14,7 @@ const sans = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Zalet — Founders build. Zalet gives them a push.",
+  title: "Zalet: Founders build. Zalet gives them a push.",
   description:
     "Paste your product URL. Get a full UGC content market strategy, filming guide, and production pack: 7-day plan, on-camera scripts, stills, and a zip ready to shoot.",
 };
