@@ -7,7 +7,7 @@
 | Partner | Role in Zalet |
 | --- | --- |
 | **Firecrawl** | Scrape product page → clean markdown/JSON |
-| **Exa** | Competitor / market angle search |
+| **Exa** | Trend research + best content format recommendations |
 | **xAI (Grok)** | 7-day strategy + UGC scripts (structured JSON) |
 | **Fal.ai** | 3 UGC stills (+ optional 1 short hook video) |
 | **Daytona** | Run pack pipeline: write artifacts, zip, stream logs, optional preview |

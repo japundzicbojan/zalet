@@ -21,6 +21,30 @@ export const AngleSchema = z.object({
 });
 export type Angle = z.infer<typeof AngleSchema>;
 
+export const TrendSignalSchema = z.object({
+  title: z.string(),
+  insight: z.string(),
+  source: z.string().optional(),
+});
+export type TrendSignal = z.infer<typeof TrendSignalSchema>;
+
+export const ContentRecSchema = z.object({
+  format: z.string(),
+  platform: z.string(),
+  why: z.string(),
+  hookIdea: z.string(),
+  priority: z.string().default("medium"),
+});
+export type ContentRec = z.infer<typeof ContentRecSchema>;
+
+export const TrendResearchSchema = z.object({
+  summary: z.string(),
+  trends: z.array(TrendSignalSchema).default([]),
+  recommendations: z.array(ContentRecSchema).default([]),
+  angles: z.array(AngleSchema).default([]),
+});
+export type TrendResearch = z.infer<typeof TrendResearchSchema>;
+
 export const DayPlanSchema = z.object({
   day: z.number(),
   platform: z.enum(["tiktok", "ig-reels", "x", "linkedin"]),
@@ -104,6 +128,7 @@ export const RunSchema = z.object({
     goal: GoalSchema.default("launch"),
   }),
   product: ProductBriefSchema.optional(),
+  research: TrendResearchSchema.optional(),
   campaign: CampaignSchema.optional(),
   creatives: z.array(CreativeSchema).default([]),
   events: z.array(TraceEventSchema).default([]),

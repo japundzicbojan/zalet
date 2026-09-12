@@ -1,4 +1,10 @@
-import type { Angle, Campaign, Goal, ProductBrief } from "../types";
+import type {
+  Angle,
+  Campaign,
+  Goal,
+  ProductBrief,
+  TrendResearch,
+} from "../types";
 import { CampaignSchema } from "../types";
 import { providerMode } from "../env";
 
@@ -311,6 +317,7 @@ async function callGrok(opts: {
 export async function generateCampaign(opts: {
   brief: ProductBrief;
   angles: Angle[];
+  research?: TrendResearch;
   icp?: string;
   goal: Goal;
 }): Promise<{ campaign: Campaign; mode: "live" | "mock"; log: string }> {
@@ -324,6 +331,8 @@ export async function generateCampaign(opts: {
   }
 
   const system = `You are a sharp founder marketing strategist for early-stage products.
+You MUST ground the 7-day plan in the provided Exa trend research and content recommendations.
+Prefer the recommended formats/platforms/hooks when they fit the product.
 Return ONLY a JSON object with EXACTLY these top-level keys:
 {
   "positioning": string,
@@ -354,11 +363,19 @@ Return ONLY a JSON object with EXACTLY these top-level keys:
 Rules:
 - Exactly 7 items in week (days 1..7).
 - Exactly 3 scripts; one MUST have language "sr" (Serbian), two "en".
+- Map at least 3 week days to Exa content recommendations (format + platform + hook).
 - No markdown, no commentary, JSON only.`;
 
   const user = JSON.stringify({
     product: opts.brief,
     angles: opts.angles,
+    trendResearch: opts.research
+      ? {
+          summary: opts.research.summary,
+          trends: opts.research.trends,
+          contentRecommendations: opts.research.recommendations,
+        }
+      : undefined,
     icp: opts.icp,
     goal: opts.goal,
   });

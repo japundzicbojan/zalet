@@ -116,6 +116,66 @@ export function CampaignBoard({ runId }: { runId: string }) {
         </div>
       </section>
 
+      {run.research ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+              Trend research · Exa
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm text-[var(--muted)]">
+              {run.research.summary}
+            </p>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                What&apos;s trending
+              </h3>
+              {run.research.trends.map((t) => (
+                <article
+                  key={t.title}
+                  className="rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4"
+                >
+                  <h4 className="font-semibold">{t.title}</h4>
+                  <p className="mt-2 text-sm text-[var(--muted)]">{t.insight}</p>
+                  {t.source ? (
+                    <a
+                      href={t.source}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-block text-xs text-[var(--accent)] underline"
+                    >
+                      source
+                    </a>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+                Best content to make
+              </h3>
+              {run.research.recommendations.map((r) => (
+                <article
+                  key={`${r.format}-${r.hookIdea}`}
+                  className="rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-4"
+                >
+                  <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+                    {r.priority} · {r.platform}
+                  </p>
+                  <h4 className="mt-1 font-semibold">{r.format}</h4>
+                  <p className="mt-2 text-sm text-[var(--muted)]">{r.why}</p>
+                  <p className="mt-3 text-sm">
+                    <span className="text-[var(--accent)]">Hook:</span>{" "}
+                    {r.hookIdea}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {run.campaign ? (
         <section className="space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">

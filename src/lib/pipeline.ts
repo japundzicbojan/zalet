@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { providerMode } from "./env";
 import { scrapeProduct } from "./providers/firecrawl";
-import { researchAngles } from "./providers/exa";
+import { researchTrends } from "./providers/exa";
 import { generateCampaign } from "./providers/xai";
 import { generateCreatives } from "./providers/fal";
 import { packInDaytona } from "./providers/daytona";
@@ -79,13 +79,19 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
 
     await appendEvent(
       run.id,
-      ev("research", "exa", "cmd", "neural search for UGC / market angles"),
+      ev(
+        "research",
+        "exa",
+        "cmd",
+        "Exa trend research + best content recommendations",
+      ),
     );
-    const angles = await researchAngles(scraped.brief, input.icp);
+    const researched = await researchTrends(scraped.brief, input.icp);
     await patchRun(run.id, {
+      research: researched.research,
       providers: {
         ...(await currentProviders(run.id, run.providers)),
-        exa: angles.mode,
+        exa: researched.mode,
       },
     });
     await appendEvent(
@@ -93,10 +99,22 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
       ev(
         "research",
         "exa",
-        angles.mode === "live" ? "success" : "info",
-        angles.log,
+        researched.mode === "live" ? "success" : "info",
+        researched.log,
       ),
     );
+    if (researched.research.recommendations[0]) {
+      const top = researched.research.recommendations[0];
+      await appendEvent(
+        run.id,
+        ev(
+          "research",
+          "exa",
+          "info",
+          `Top content pick → ${top.format} on ${top.platform}: ${top.hookIdea}`,
+        ),
+      );
+    }
 
     await appendEvent(
       run.id,
@@ -104,7 +122,8 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     );
     const strategy = await generateCampaign({
       brief: scraped.brief,
-      angles: angles.angles,
+      angles: researched.research.angles,
+      research: researched.research,
       icp: input.icp,
       goal: input.goal ?? "launch",
     });

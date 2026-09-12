@@ -9,7 +9,7 @@ Hackathon build for **Grok Bot Serbia** using the official partner stack.
 | Partner | Used for |
 | --- | --- |
 | **Firecrawl** | Product page scrape → brief |
-| **Exa** | Market / UGC angle research |
+| **Exa** | Trend research + recommended content formats/hooks |
 | **xAI (Grok)** | 7-day plan + scripts (1 Serbian) |
 | **Fal.ai** | 3 UGC stills |
 | **Daytona** | Sandbox pack (`README` + `strategy.json` + `index.html` + zip + preview) |
