@@ -215,8 +215,8 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
         "convex",
         "info",
         modes.convex === "live"
-          ? "Convex URL set — board can subscribe live"
-          : "File store (.data/runs) active until NEXT_PUBLIC_CONVEX_URL is set",
+          ? "Convex is on. Board can update live."
+          : "Saving runs to .data/runs until Convex URL is set",
       ),
     );
 

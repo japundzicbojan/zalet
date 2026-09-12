@@ -13,9 +13,9 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Zalet — advertise your product as a founder",
+  title: "Zalet: a week of promo for founders who sell their own product",
   description:
-    "For founders promoting their own product. Paste a URL → 7-day founder-led UGC plan, scripts, creatives, packed in Daytona.",
+    "Paste your product URL. Get a 7-day plan, scripts you can film, creatives, and a Daytona pack.",
 };
 
 export default function RootLayout({
@@ -23,8 +23,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable} antialiased`}>
-        {children}
+      <body className={`${display.variable} ${sans.variable} relative antialiased`}>
+        <div className="relative z-[1] min-h-screen">{children}</div>
       </body>
     </html>
   );

@@ -32,47 +32,47 @@ function mockCampaign(
       format: platform === "x" ? "thread" : "UGC talking-head",
       hook:
         day === 1
-          ? `Stop guessing your first week of content for ${brief.name}.`
-          : `Day ${day}: ${angle} — shown, not theorized.`,
+          ? `I keep putting off posting about ${brief.name}. Not this week.`
+          : `Day ${day}: ${angle}, on camera, no theory.`,
       cta:
         goal === "waitlist"
-          ? "Join the waitlist"
-          : "Try it on your product URL",
+          ? "Jump on the waitlist"
+          : "Try it with your own URL",
       kpi: day % 2 === 0 ? "saves" : "click-through",
     };
   });
 
   return {
-    positioning: `${brief.name} — founder-led promo for the first week of attention. ${brief.oneLiner}`,
+    positioning: `${brief.name} gets you a week of posts you can film yourself. ${brief.oneLiner}`,
     week,
     scripts: [
       {
         dayRef: 1,
         language: "en",
-        hookText: `I built ${brief.name} because I was tired of guessing my own marketing.`,
+        hookText: `I built ${brief.name}. Nobody else was going to advertise it for me.`,
         runtimeSec: 22,
         beats: [
           {
             t: 0,
-            visual: "Founder selfie, messy desk",
-            vo: `I built ${brief.name}. I still had to advertise it myself.`,
-            onScreen: "No marketing team",
+            visual: "Selfie at a messy desk",
+            vo: `I built ${brief.name}. Still had to push it myself.`,
+            onScreen: "No marketing hire",
           },
           {
             t: 6,
-            visual: "Screen record: product demo",
-            vo: "So I filmed the product loop — pain, fix, CTA.",
-            onScreen: "Founder = the ad",
+            visual: "Screen share of the product",
+            vo: "So I filmed the loop: problem, fix, ask.",
+            onScreen: "I am the ad",
           },
           {
             t: 12,
-            visual: "7-day board cards",
-            vo: "Now I have a week of hooks I can actually post.",
-            onScreen: "7-day promo",
+            visual: "Seven day cards on a board",
+            vo: "Now I've got a week of hooks I can actually post.",
+            onScreen: "7 days ready",
           },
           {
             t: 18,
-            visual: "Point to CTA",
+            visual: "Point at CTA",
             vo: week[0].cta,
             onScreen: week[0].cta,
           },
@@ -82,20 +82,20 @@ function mockCampaign(
       {
         dayRef: 3,
         language: "en",
-        hookText: `Agencies sell timelines. I needed users this week for ${brief.name}.`,
+        hookText: `Agencies wanted weeks. I needed people trying ${brief.name} now.`,
         runtimeSec: 20,
         beats: [
           {
             t: 0,
-            visual: "Split: agency vs founder",
-            vo: "Agency calendar vs founder calendar.",
-            onScreen: "2 weeks vs today",
+            visual: "Split screen: agency vs phone",
+            vo: "Their timeline versus mine.",
+            onScreen: "Weeks vs today",
           },
           {
             t: 7,
-            visual: "UGC stills + script",
-            vo: "I scripted three clips I can shoot on my phone.",
-            onScreen: "Phone-ready ads",
+            visual: "Phone filming a short clip",
+            vo: "Three scripts. Phone camera. Done.",
+            onScreen: "Shoot tonight",
           },
           {
             t: 14,
@@ -109,25 +109,25 @@ function mockCampaign(
       {
         dayRef: 5,
         language: "sr",
-        hookText: `Imam proizvod. Nemam marketing tim. ${brief.name} moram sam da reklamiram.`,
+        hookText: `Imam proizvod. Nemam marketing. ${brief.name} reklamiram sam.`,
         runtimeSec: 21,
         beats: [
           {
             t: 0,
-            visual: "Selfie, balkon",
+            visual: "Selfie na balkonu",
             vo: "Imam proizvod. Nemam marketing tim.",
-            onScreen: "Founder mode",
+            onScreen: "Samo ja",
           },
           {
             t: 7,
             visual: "Snimak ekrana proizvoda",
-            vo: "Zato snimam sam: problem, rešenje, poziv na akciju.",
-            onScreen: "Ja = reklama",
+            vo: "Snimam sam: problem, rešenje, poziv.",
+            onScreen: "Ja snimam",
           },
           {
             t: 14,
-            visual: "Board + zip",
-            vo: "Sedam dana sadržaja. Spreman za objavu.",
+            visual: "Tabla sa planom",
+            vo: "Sedam dana. Spremano za objavu.",
             onScreen: "7 dana",
           },
         ],
@@ -330,13 +330,12 @@ export async function generateCampaign(opts: {
     };
   }
 
-  const system = `You are a sharp founder-led growth strategist.
-The USER is a founder advertising THEIR OWN product with no marketing team.
-Write a 7-day promo plan and scripts THEY can film themselves (selfie, screen record, phone camera).
-Do NOT write agency brand-ad briefs. Soft-sell is fine; every day must promote the product toward the goal.
-Ground the plan in the Exa trend research and content recommendations.
-Prefer recommended formats/platforms/hooks when they fit.
-Return ONLY a JSON object with EXACTLY these top-level keys:
+  const system = `You write promo plans for founders who sell their own product and have no marketing team.
+Sound like a clear-headed builder, not a brand agency.
+Never use em dashes or en dashes in any string. Use commas, periods, or colons instead.
+No buzzwords like unlock, elevate, leverage, seamless, cutting-edge, delve, game-changer.
+Write hooks and scripts in first person so the founder can say them on camera.
+Return ONLY JSON with these top-level keys:
 {
   "positioning": string,
   "week": [
@@ -364,12 +363,11 @@ Return ONLY a JSON object with EXACTLY these top-level keys:
   ]
 }
 Rules:
-- Exactly 7 items in week (days 1..7).
-- Exactly 3 scripts; one MUST have language "sr" (Serbian), two "en".
-- Scripts are spoken by the founder (first person: I/we built…, here's how…).
-- Map at least 3 week days to Exa content recommendations (format + platform + hook).
-- CTA must push the product goal (waitlist / launch / first users).
-- No markdown, no commentary, JSON only.`;
+- Exactly 7 week days (1..7).
+- Exactly 3 scripts. One language must be "sr" (Serbian). Two "en".
+- Use the Exa research when it helps.
+- Every day should push the product toward the goal.
+- JSON only. No markdown.`;
 
   const user = JSON.stringify({
     role: "founder_promoting_own_product",

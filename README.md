@@ -13,7 +13,7 @@ Hackathon build for **Grok Bot Serbia** using the official partner stack.
 | **xAI (Grok)** | 7-day plan + scripts (1 Serbian) |
 | **Fal.ai** | 3 UGC stills |
 | **Daytona** | Sandbox pack (`README` + `strategy.json` + `index.html` + zip + preview) |
-| **Convex** | Schema ready for live board (`convex/schema.ts`) — file store fallback until URL set |
+| **Convex** | Schema ready for live board (`convex/schema.ts`)  -  file store fallback until URL set |
 | **Render** | Deploy via `render.yaml` |
 
 Wispr Flow = voice while building. Wonder = optional design pass later.
@@ -38,8 +38,8 @@ Without keys the app still runs end-to-end with **labeled mocks** so the demo pa
 
 ## Scripts
 
-- `pnpm dev` — local
-- `pnpm build && pnpm start` — production (Render)
+- `pnpm dev`  -  local
+- `pnpm build && pnpm start`  -  production (Render)
 
 ## Notes
 

@@ -16,7 +16,7 @@ function mockBrief(url: string): ProductBrief {
   return {
     url,
     name,
-    oneLiner: `${name} helps founders ship faster with less busywork.`,
+    oneLiner: `${name} helps founders get stuff shipped without drowning in busywork.`,
     audience: "early-stage founders and indie hackers",
     features: ["Fast onboarding", "Clear core loop", "Shareable output"],
     toneHints: ["direct", "founder-to-founder", "no fluff"],

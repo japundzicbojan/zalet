@@ -1,13 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #f4efe6;
-  --muted: #b9a994;
-  --panel: rgba(28, 24, 20, 0.88);
-  --line: #3a322a;
-  --accent: #e8a45a;
-  --bg0: #14110e;
-  --bg1: #1c1814;
+  --bg: #e7eef3;
+  --bg-deep: #d5e2ea;
+  --ink: #0b1f24;
+  --muted: #4d6570;
+  --line: #b7c9d2;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-solid: #f4f8fa;
+  --accent: #0f7a6c;
+  --accent-soft: rgba(15, 122, 108, 0.12);
+  --danger: #b42318;
+  --ok: #0f7a6c;
+  --warn: #9a6700;
 }
 
 @theme inline {
@@ -15,16 +20,108 @@
   --font-display: var(--font-display);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
-  min-height: 100vh;
+  min-height: 100%;
+}
+
+body {
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(232, 164, 90, 0.18), transparent 55%),
-    radial-gradient(900px 500px at 90% 0%, rgba(90, 140, 180, 0.12), transparent 50%),
-    linear-gradient(180deg, var(--bg1), var(--bg0) 40%, #0f0d0b);
+    radial-gradient(900px 420px at 12% -8%, rgba(15, 122, 108, 0.16), transparent 55%),
+    radial-gradient(700px 380px at 92% 8%, rgba(37, 99, 235, 0.1), transparent 50%),
+    linear-gradient(165deg, #eef4f7 0%, var(--bg) 42%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(90deg, transparent 0 48%, rgba(15, 122, 108, 0.05) 49%, transparent 51%),
+    repeating-linear-gradient(
+      -18deg,
+      transparent,
+      transparent 18px,
+      rgba(11, 31, 36, 0.03) 18px,
+      rgba(11, 31, 36, 0.03) 19px
+    );
 }
 
 a {
   color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(15, 122, 108, 0.22);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-line {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleX(0.72);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-rise-delay {
+  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.animate-rise-late {
+  animation: rise-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+.runway-line {
+  transform-origin: left center;
+  animation: pulse-line 2.8s ease-in-out infinite;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(183, 201, 210, 0.35) 20%,
+    rgba(244, 248, 250, 0.9) 50%,
+    rgba(183, 201, 210, 0.35) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
 }

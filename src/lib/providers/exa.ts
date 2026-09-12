@@ -10,64 +10,64 @@ import { providerMode } from "../env";
 function mockResearch(brief: ProductBrief): TrendResearch {
   const angles: Angle[] = [
     {
-      title: "Founder time tax",
-      why: `${brief.name} attacks hours wasted on repetitive launch chores.`,
+      title: "No time for a content machine",
+      why: `${brief.name} is for people who would rather ship than babysit a content calendar.`,
       source: "mock",
     },
     {
-      title: "Proof over polish",
-      why: "Buyers want a concrete week of content, not another strategy PDF.",
+      title: "Show the work",
+      why: "People click when they see the product doing something real, not a slogan.",
       source: "mock",
     },
     {
-      title: "UGC native",
-      why: "Short-form hooks beat brand ads for early traction.",
+      title: "Phone-camera energy",
+      why: "Rough founder clips usually beat slick brand ads early on.",
       source: "mock",
     },
   ];
 
   return {
-    summary: `For founders promoting ${brief.name} themselves: skip polished brand ads. Film raw founder UGC that shows the product loop, pain → fix, and a clear CTA.`,
+    summary: `If you're promoting ${brief.name} yourself, keep it simple: film the painful moment, show the fix in the product, end with one clear ask.`,
     trends: [
       {
-        title: "Founder-as-creator beats brand ads",
+        title: "Founder on camera still wins",
         insight:
-          "Audiences trust a founder on camera more than a studio spot — especially for early products.",
+          "People believe a founder talking from their desk more than a polished studio spot, especially before you're famous.",
         source: "mock",
       },
       {
-        title: "Problem-first hooks",
+        title: "Open on the headache",
         insight:
-          "Top short-form promo opens on a specific buyer pain in 2 seconds, then shows your product solving it.",
+          "The clips that travel start with a concrete pain in the first two seconds, then cut to the product.",
         source: "mock",
       },
       {
-        title: "Screen-record proof",
+        title: "Screen recordings get saved",
         insight:
-          "Founders who screen-record the real workflow get more saves than talking-head-only pitches.",
+          "A quick walkthrough of the real workflow gets more saves than a talking head with nothing on screen.",
         source: "mock",
       },
     ],
     recommendations: [
       {
-        format: "Founder talking-head + screen record (30–45s)",
+        format: "You on camera, then screen share (about 40s)",
         platform: "tiktok / ig-reels",
-        why: "You (the founder) are the ad — face for trust, product for proof.",
-        hookIdea: `I built ${brief.name} because I was tired of [pain]. Here's the 20-second fix.`,
+        why: "Your face builds trust. The screen proves the product.",
+        hookIdea: `I built ${brief.name} because I was sick of [pain]. Watch this 20-second fix.`,
         priority: "high",
       },
       {
-        format: "3-post teach + soft CTA",
+        format: "Three short posts, then a soft ask",
         platform: "x / linkedin",
-        why: "Founders win distribution by teaching, then pitching their product.",
-        hookIdea: `3 mistakes I made before ${brief.name} — and what I ship instead.`,
+        why: "Teach something useful first. Pitch at the end.",
+        hookIdea: `Three mistakes I made before ${brief.name}, and what I do now.`,
         priority: "high",
       },
       {
-        format: "Before/after split",
+        format: "Before / after split",
         platform: "ig-reels",
-        why: "Simple visual promo founders can film on a phone.",
-        hookIdea: "Left: chaos. Right: same job with our product.",
+        why: "Easy to shoot on a phone. Clear without a script rewrite.",
+        hookIdea: "Left: the mess. Right: same job with our product.",
         priority: "medium",
       },
     ],
@@ -145,9 +145,9 @@ async function searchAngles(
   brief: ProductBrief,
   icp?: string,
 ): Promise<Angle[]> {
-  const query = `Founder-led UGC and organic promo angles for advertising "${brief.name}" (${brief.oneLiner}) to ${
-    icp || brief.audience || "their ideal customers"
-  }. Focus on content the product's founder can film themselves — not agency ads.`;
+  const query = `Organic promo ideas for a founder advertising "${brief.name}" (${brief.oneLiner}) to ${
+    icp || brief.audience || "their buyers"
+  }. Prefer clips the founder can film alone on a phone, not agency ads.`;
 
   const res = await fetch("https://api.exa.ai/search", {
     method: "POST",
@@ -187,9 +187,9 @@ async function answerTrends(
   recommendations: ContentRec[];
   citations: { title?: string; url?: string }[];
 } | null> {
-  const query = `A founder wants to advertise their own product "${brief.name}" (${brief.oneLiner}) to ${
-    icp || brief.audience || "their ideal customers"
-  } with no marketing team. What short-form UGC and organic social trends work right now for founder-led product promotion? Recommend formats, platforms, and hook ideas they can film themselves over the next 7 days.`;
+  const query = `I'm a founder with no marketing team. I need to promote "${brief.name}" (${brief.oneLiner}) to ${
+    icp || brief.audience || "my buyers"
+  }. What short-form posts are working right now that I can film myself this week? Give formats, platforms, and hook lines.`;
 
   const res = await fetch("https://api.exa.ai/answer", {
     method: "POST",
@@ -202,7 +202,7 @@ async function answerTrends(
       text: true,
       model: "exa",
       systemPrompt:
-        "Audience is founders promoting THEIR OWN product (self-serve marketing / organic ads). Prefer actionable short-form UGC they can create alone. Avoid agency/brand-campaign advice. Be specific about formats and platforms.",
+        "Write like a sharp friend who ships products. No em dashes. No marketing jargon. Concrete formats and platforms only. Skip agency advice.",
       outputSchema,
     }),
   });
@@ -250,7 +250,7 @@ async function answerTrends(
   };
 }
 
-/** @deprecated prefer researchTrends — kept for callers that only need angles */
+/** @deprecated prefer researchTrends  -  kept for callers that only need angles */
 export async function researchAngles(
   brief: ProductBrief,
   icp?: string,

@@ -1,4 +1,4 @@
-# Zalet — Zalet Lite (official partner stack)
+# Zalet  -  Zalet Lite (official partner stack)
 
 **One-liner:** Paste a product URL → agent researches (Firecrawl + Exa), plans with Grok (xAI), generates UGC creatives (Fal), packs the campaign in a **Daytona** sandbox, persists the board on **Convex**, ships on **Render**.
 
@@ -15,7 +15,7 @@
 | **Render** | Public live URL |
 | Grok Bot / Cursor | Build environment |
 | Wispr Flow | Voice while building (not in product) |
-| Wonder | Optional UI polish later — not on critical path |
+| Wonder | Optional UI polish later  -  not on critical path |
 
 ## MVP IN
 

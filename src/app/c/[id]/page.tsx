@@ -1,5 +1,5 @@
-import { CampaignBoard } from "@/components/CampaignBoard";
 import Link from "next/link";
+import { CampaignBoard } from "@/components/CampaignBoard";
 
 export default async function CampaignPage({
   params,
@@ -7,14 +7,18 @@ export default async function CampaignPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--ink)]">
-          ← Zalet
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-8 md:py-10">
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <Link
+          href="/"
+          className="text-sm text-[var(--muted)] transition hover:text-[var(--accent)]"
+        >
+          Back to Zalet
         </Link>
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-          /c/{id}
+        <p className="font-mono text-[11px] tracking-wide text-[var(--muted)]">
+          {id}
         </p>
       </div>
       <CampaignBoard runId={id} />
