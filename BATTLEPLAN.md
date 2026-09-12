@@ -22,15 +22,16 @@
 1. URL + optional ICP/goal
 2. Async run: board opens immediately, agent trace streams via polling
 3. Firecrawl extract + Exa trends/recommendations
-4. Grok 7-day calendar + 3 scripts (1 Serbian)
-5. Fal 3 stills at 9:16
+4. Grok 7-day calendar + 3 English scripts
+5. Fal 3 stills at 9:16 (+ optional Generate video)
 6. Daytona packs campaign + local zip download + preview route
 7. Shareable board `/c/[runId]`
 8. Deployable on Render
+9. Board iterate: refine / week 2 / rewrite script / new still / adapt from results
 
 ## MVP OUT
 
-Auth (beyond optional list token + rate limits), editing, multi-product, posting to socials, Wonder-first design, Wispr-in-app, lip-sync video on critical path.
+Auth (beyond optional list token + rate limits), multi-product, posting to socials, Wonder-first design, Wispr-in-app, native social analytics APIs, lip-sync video on critical path.
 
 ## Demo golden path
 

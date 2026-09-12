@@ -151,7 +151,11 @@ export function CampaignBoard({ runId }: { runId: string }) {
     setVideoBusy(true);
     setVideoError(null);
     try {
-      const res = await fetch(`/api/runs/${run.id}/video`, { method: "POST" });
+      // Fal minimax often takes 2–3 minutes. Keep the request open.
+      const res = await fetch(`/api/runs/${run.id}/video`, {
+        method: "POST",
+        signal: AbortSignal.timeout(290_000),
+      });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(
@@ -161,8 +165,22 @@ export function CampaignBoard({ runId }: { runId: string }) {
         );
       }
       if (data.run) setRun(data.run);
+      const last = [...(data.run?.creatives || [])]
+        .reverse()
+        .find((c: { kind?: string }) => c.kind === "video");
+      if (last?.mock) {
+        setVideoError(
+          "Video fell back to a placeholder. Check FAL_KEY / Fal model access.",
+        );
+      }
     } catch (err) {
-      setVideoError(err instanceof Error ? err.message : "Video failed");
+      const msg =
+        err instanceof Error ? err.message : "Video failed";
+      setVideoError(
+        msg.includes("Timeout") || msg.includes("abort")
+          ? "Video timed out after ~5 minutes. Try again, or use a warm board for the demo."
+          : msg,
+      );
     } finally {
       setVideoBusy(false);
     }
@@ -281,6 +299,11 @@ export function CampaignBoard({ runId }: { runId: string }) {
                 Open product site
               </a>
             </div>
+            {videoBusy ? (
+              <p className="text-xs text-[var(--muted)]">
+                Fal video usually takes 2–3 minutes. Leave this tab open.
+              </p>
+            ) : null}
             {videoError ? (
               <p className="text-xs text-[var(--danger)]">{videoError}</p>
             ) : null}

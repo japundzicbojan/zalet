@@ -13,9 +13,10 @@
 1. Homepage: “I’m a founder. I paste my product URL.”
 2. Submit → land on `/c/[id]` while status is **Running**.
 3. Point at the live trace: Firecrawl → Exa → Grok → Fal → Daytona.
-4. When ready: show 7-day plan, open a Serbian script, show stills.
-5. Click **Download zip** and **Open pack preview**.
-6. Copy board link: “This is what I’d send my co-founder.”
+4. When ready: show 7-day plan, open an English script, show stills.
+5. Optional: **Generate video** (2–3 min) or hit a refine preset to show the board is not one-shot.
+6. Click **Download zip** and **Open pack preview**.
+7. Copy board link: “This is what I’d send my co-founder.”
 
 ## Backup if a partner flakes
 
