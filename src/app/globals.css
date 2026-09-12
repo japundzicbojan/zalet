@@ -59,8 +59,9 @@ body::before {
     );
 }
 
+/* Don't force `color: inherit` on anchors — it overrides button text colors
+   (e.g. light text on dark primary) and makes "Open pack preview" look blacked out. */
 a {
-  color: inherit;
   text-decoration: none;
 }
 

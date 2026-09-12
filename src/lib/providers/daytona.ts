@@ -255,7 +255,8 @@ ls -la`,
       );
     }
 
-    let previewUrl: string | undefined = localPreview;
+    // Always expose the durable local preview route. Daytona sandbox preview
+    // links die after cleanup and look like a blank/black tab in demos.
     const keepSandbox =
       process.env.DAYTONA_KEEP_SANDBOX === "1" ||
       process.env.DAYTONA_KEEP_SANDBOX === "true";
@@ -266,14 +267,13 @@ ls -la`,
           "cd /home/daytona/zalet && nohup python3 -m http.server 3000 >/tmp/http.log 2>&1 & sleep 1",
         );
         const preview = await sandbox.getPreviewLink(3000);
-        previewUrl =
+        const remote =
           (preview as { url?: string }).url ||
-          (preview as { link?: string }).link ||
-          localPreview;
-        logs.push(`$ preview → ${previewUrl}`);
+          (preview as { link?: string }).link;
+        logs.push(`$ sandbox preview (optional) → ${remote || "n/a"}`);
       } catch (err) {
         logs.push(
-          `preview skipped: ${err instanceof Error ? err.message : "error"}`,
+          `sandbox preview skipped: ${err instanceof Error ? err.message : "error"}`,
         );
       }
     } else {
@@ -285,13 +285,13 @@ ls -la`,
           `cleanup skipped: ${err instanceof Error ? err.message : "error"}`,
         );
       }
-      logs.push(`$ local preview → ${localPreview}`);
     }
+    logs.push(`$ local preview → ${localPreview}`);
 
     return {
       mode: "live",
       sandboxId: keepSandbox ? sandbox.id : undefined,
-      previewUrl,
+      previewUrl: localPreview,
       zipPath,
       zipReady: true,
       logs,

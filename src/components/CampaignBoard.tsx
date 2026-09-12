@@ -64,9 +64,9 @@ function eventTone(level: TraceEvent["level"]) {
 }
 
 const btnSecondary =
-  "inline-flex h-10 items-center justify-center border border-[var(--line)] bg-white/80 px-3.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]";
+  "inline-flex h-10 items-center justify-center border border-[var(--line)] bg-white/80 px-3.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)] hover:text-[var(--ink)] visited:text-[var(--ink)]";
 const btnPrimary =
-  "inline-flex h-10 items-center justify-center border border-[var(--ink)] bg-[var(--ink)] px-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:border-[var(--accent)]";
+  "inline-flex h-10 items-center justify-center border border-[var(--ink)] bg-[var(--ink)] px-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:border-[var(--accent)] hover:text-[#f4fbfa] visited:bg-[var(--ink)] visited:text-[#f4fbfa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
 function CopyBoardLink({ runId }: { runId: string }) {
   const [copied, setCopied] = useState(false);
@@ -264,9 +264,9 @@ export function CampaignBoard({ runId }: { runId: string }) {
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
             <div className="flex flex-wrap gap-2 sm:justify-end">
-              {run.daytona?.previewUrl ? (
+              {run.daytona?.zipReady || run.daytona?.previewUrl ? (
                 <a
-                  href={run.daytona.previewUrl}
+                  href={`/api/runs/${run.id}/preview`}
                   target="_blank"
                   rel="noreferrer"
                   className={btnPrimary}
