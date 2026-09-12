@@ -53,10 +53,13 @@ export function RunForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-1">
-        <p className="font-display text-xl tracking-tight">Start a campaign</p>
-        <p className="text-sm text-[var(--muted)]">
-          The board opens instantly. The agent trace fills as partners finish.
+      <div className="space-y-1.5">
+        <p className="font-display text-2xl leading-tight tracking-tight text-[var(--ink)]">
+          Launch a 7-day UGC run
+        </p>
+        <p className="text-[13px] leading-relaxed text-[var(--muted)]">
+          We crawl your product, research angles, and pack scripts + stills you
+          can film this week.
         </p>
       </div>
 
@@ -69,7 +72,7 @@ export function RunForm() {
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://yourproduct.com"
+          placeholder="https://resend.com"
           className={fieldClass}
           autoComplete="url"
         />
@@ -119,7 +122,7 @@ export function RunForm() {
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex w-full items-center justify-center bg-[var(--ink)] px-5 py-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:text-[#f4fbfa] disabled:cursor-wait disabled:opacity-70 sm:w-auto"
+        className="inline-flex w-full items-center justify-center bg-[var(--ink)] px-5 py-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:text-[#f4fbfa] disabled:cursor-wait disabled:opacity-70"
       >
         {busy ? (
           <span className="inline-flex items-center gap-2">
@@ -127,13 +130,12 @@ export function RunForm() {
             Opening your board
           </span>
         ) : (
-          "Create campaign"
+          "Generate board"
         )}
       </button>
 
       <p className="text-xs leading-relaxed text-[var(--muted)]">
-        You land on the live board right away while research, plan, stills, and
-        the Daytona pack fill in.
+        Shareable board with scripts, stills, zip pack, and iterate tools.
       </p>
     </form>
   );
