@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Run, TraceEvent } from "@/lib/types";
+import type { RefinePreset, Run, TraceEvent } from "@/lib/types";
 
 const PHASES = [
   { id: "research", label: "Research", tools: ["firecrawl", "exa"] },
@@ -9,6 +9,29 @@ const PHASES = [
   { id: "creatives", label: "Stills", tools: ["fal"] },
   { id: "pack", label: "Pack", tools: ["daytona"] },
 ] as const;
+
+const REFINE_PRESETS: { id: RefinePreset; label: string; hint: string }[] = [
+  {
+    id: "sharper_hooks",
+    label: "Sharper hooks",
+    hint: "First two seconds have to stop the scroll",
+  },
+  {
+    id: "founder_on_camera",
+    label: "More founder-on-camera",
+    hint: "Talking head first, then product proof",
+  },
+  {
+    id: "louder_cta",
+    label: "Louder CTA",
+    hint: "One clear ask per day",
+  },
+  {
+    id: "shorter_scripts",
+    label: "Shorter scripts",
+    hint: "Tighten to ~15–20s",
+  },
+];
 
 function phaseState(run: Run, phaseTools: readonly string[]) {
   const related = run.events.filter((e) => phaseTools.includes(e.tool));
@@ -73,6 +96,11 @@ export function CampaignBoard({ runId }: { runId: string }) {
   const [openScript, setOpenScript] = useState<string | null>(null);
   const [videoBusy, setVideoBusy] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [iterateBusy, setIterateBusy] = useState(false);
+  const [iterateError, setIterateError] = useState<string | null>(null);
+  const [scriptEdits, setScriptEdits] = useState<Record<number, string>>({});
+  const [resultUrls, setResultUrls] = useState("");
+  const [resultNotes, setResultNotes] = useState("");
   const traceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -137,6 +165,30 @@ export function CampaignBoard({ runId }: { runId: string }) {
       setVideoError(err instanceof Error ? err.message : "Video failed");
     } finally {
       setVideoBusy(false);
+    }
+  }
+
+  async function postIterate(body: Record<string, unknown>) {
+    if (!run || iterateBusy) return;
+    setIterateBusy(true);
+    setIterateError(null);
+    try {
+      const res = await fetch(`/api/runs/${run.id}/iterate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Iterate failed",
+        );
+      }
+      if (data.run) setRun(data.run);
+    } catch (err) {
+      setIterateError(err instanceof Error ? err.message : "Iterate failed");
+    } finally {
+      setIterateBusy(false);
     }
   }
 
@@ -449,9 +501,18 @@ export function CampaignBoard({ runId }: { runId: string }) {
 
       {run.campaign ? (
         <section className="space-y-4">
-          <h2 className="font-display text-2xl tracking-tight">
-            Seven days of posts
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="font-display text-2xl tracking-tight">
+              {run.iteration?.weekNumber && run.iteration.weekNumber > 1
+                ? `Week ${run.iteration.weekNumber} posts`
+                : "Seven days of posts"}
+            </h2>
+            {run.iteration?.lastAction ? (
+              <p className="text-xs text-[var(--muted)]">
+                Last iterate: {run.iteration.lastAction}
+              </p>
+            ) : null}
+          </div>
           <div className="overflow-x-auto border border-[var(--line)] bg-white/50">
             <div className="flex min-w-[720px] divide-x divide-[var(--line)]">
               {run.campaign.week.map((d) => (
@@ -474,14 +535,124 @@ export function CampaignBoard({ runId }: { runId: string }) {
         </section>
       ) : null}
 
+      {run.status === "completed" && run.campaign ? (
+        <section className="space-y-6 border border-[var(--line)] bg-white/60 p-5 md:p-6">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-2xl tracking-tight">
+              Keep going on this board
+            </h2>
+            <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
+              Refine with Grok, ship week{" "}
+              {(run.iteration?.weekNumber ?? 1) + 1}, or feed back what
+              actually performed. Same board, not a new paste.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+              Refine with Grok
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {REFINE_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  title={p.hint}
+                  disabled={iterateBusy}
+                  onClick={() =>
+                    postIterate({ action: "refine", preset: p.id })
+                  }
+                  className={`${btnSecondary} disabled:cursor-wait disabled:opacity-60`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={iterateBusy}
+                onClick={() => postIterate({ action: "week2" })}
+                className={`${btnPrimary} disabled:cursor-wait disabled:opacity-60`}
+              >
+                {iterateBusy
+                  ? "Working…"
+                  : `Generate week ${(run.iteration?.weekNumber ?? 1) + 1}`}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-[var(--line)] pt-5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+              Adapt from results
+            </h3>
+            <p className="max-w-2xl text-sm text-[var(--muted)]">
+              Paste public post URLs if you have them. Instagram, TikTok, and
+              similar often block scrapers, so your notes matter more than the
+              scrape. Firecrawl tries anyway; Grok adapts from what we get plus
+              what you write.
+            </p>
+            <textarea
+              value={resultUrls}
+              onChange={(e) => setResultUrls(e.target.value)}
+              rows={2}
+              placeholder="https://… post URLs, one per line"
+              className="w-full border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+            />
+            <textarea
+              value={resultNotes}
+              onChange={(e) => setResultNotes(e.target.value)}
+              rows={3}
+              placeholder="What worked? What flopped? Views, comments, saves, what people replied…"
+              className="w-full border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              type="button"
+              disabled={iterateBusy}
+              onClick={() => {
+                const postUrls = resultUrls
+                  .split(/[\n,\s]+/)
+                  .map((u) => u.trim())
+                  .filter((u) => /^https?:\/\//i.test(u))
+                  .slice(0, 5);
+                postIterate({
+                  action: "adapt_results",
+                  postUrls,
+                  notes: resultNotes.trim() || undefined,
+                });
+              }}
+              className={`${btnPrimary} disabled:cursor-wait disabled:opacity-60`}
+            >
+              {iterateBusy ? "Adapting…" : "Adapt next plan"}
+            </button>
+            {run.iteration?.resultSignals?.length ? (
+              <ul className="space-y-1 text-xs text-[var(--muted)]">
+                {run.iteration.resultSignals.map((s) => (
+                  <li key={s.url}>
+                    {s.scraped ? "scraped" : "thin/blocked"} · {s.title || s.url}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          {iterateError ? (
+            <p className="text-sm text-[var(--danger)]">{iterateError}</p>
+          ) : null}
+          {iterateBusy ? (
+            <p className="text-xs text-[var(--accent)]">
+              Grok is iterating. Trace updates live above.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       {run.campaign?.scripts?.length ? (
         <section className="space-y-4">
           <h2 className="font-display text-2xl tracking-tight">
             Scripts
           </h2>
           <div className="divide-y divide-[var(--line)] border border-[var(--line)] bg-white/55">
-            {run.campaign.scripts.map((s) => {
-              const key = `${s.dayRef}-${s.language}`;
+            {run.campaign.scripts.map((s, scriptIndex) => {
+              const key = `${s.dayRef}-${s.language}-${scriptIndex}`;
               const open = openScript === key;
               return (
                 <div key={key}>
@@ -492,9 +663,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
                   >
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--accent)]">
-                        Day {s.dayRef} ·{" "}
-                        {s.language === "sr" ? "Serbian" : "English"} ·{" "}
-                        {s.runtimeSec}s
+                        Day {s.dayRef} · English · {s.runtimeSec}s
                       </p>
                       <p className="mt-1 font-semibold">{s.hookText}</p>
                     </div>
@@ -503,24 +672,79 @@ export function CampaignBoard({ runId }: { runId: string }) {
                     </span>
                   </button>
                   {open ? (
-                    <ul className="space-y-2 border-t border-[var(--line)] bg-[var(--panel-solid)] px-4 py-3 text-sm text-[var(--muted)]">
-                      {s.beats.map((b) => (
-                        <li key={`${key}-${b.t}`} className="flex gap-3">
-                          <span className="w-10 shrink-0 font-mono text-[var(--ink)]">
-                            {b.t}s
-                          </span>
-                          <span>
-                            <span className="text-[var(--ink)]">{b.vo}</span>
-                            <span className="mt-0.5 block text-xs opacity-70">
-                              {b.visual} · on screen: {b.onScreen}
+                    <div className="space-y-3 border-t border-[var(--line)] bg-[var(--panel-solid)] px-4 py-3">
+                      <ul className="space-y-2 text-sm text-[var(--muted)]">
+                        {s.beats.map((b) => (
+                          <li key={`${key}-${b.t}`} className="flex gap-3">
+                            <span className="w-10 shrink-0 font-mono text-[var(--ink)]">
+                              {b.t}s
                             </span>
-                          </span>
+                            <span>
+                              <span className="text-[var(--ink)]">{b.vo}</span>
+                              <span className="mt-0.5 block text-xs opacity-70">
+                                {b.visual} · on screen: {b.onScreen}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                        <li className="pt-1 text-[var(--accent)]">
+                          CTA: {s.cta}
                         </li>
-                      ))}
-                      <li className="pt-1 text-[var(--accent)]">
-                        CTA: {s.cta}
-                      </li>
-                    </ul>
+                      </ul>
+                      {run.status === "completed" ? (
+                        <div className="space-y-2 border-t border-[var(--line)] pt-3">
+                          <label className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                            Rewrite this script
+                          </label>
+                          <input
+                            value={scriptEdits[s.dayRef] || ""}
+                            onChange={(e) =>
+                              setScriptEdits((prev) => ({
+                                ...prev,
+                                [s.dayRef]: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. Make it punchier / shorter CTA / more skeptical tone"
+                            className="w-full border border-[var(--line)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={
+                                iterateBusy ||
+                                !(scriptEdits[s.dayRef] || "").trim()
+                              }
+                              onClick={() =>
+                                postIterate({
+                                  action: "rewrite_script",
+                                  dayRef: s.dayRef,
+                                  instruction: (
+                                    scriptEdits[s.dayRef] || ""
+                                  ).trim(),
+                                })
+                              }
+                              className={`${btnPrimary} disabled:cursor-wait disabled:opacity-60`}
+                            >
+                              Rewrite with Grok
+                            </button>
+                            <button
+                              type="button"
+                              disabled={iterateBusy}
+                              onClick={() =>
+                                postIterate({
+                                  action: "new_still",
+                                  dayRef: s.dayRef,
+                                  scriptIndex,
+                                })
+                              }
+                              className={`${btnSecondary} disabled:cursor-wait disabled:opacity-60`}
+                            >
+                              New still for this script
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               );

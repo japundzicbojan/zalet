@@ -170,3 +170,67 @@ export async function generateVideoClip(opts: {
     };
   }
 }
+
+export async function generateStillForScript(opts: {
+  brief: ProductBrief;
+  hookText: string;
+}): Promise<{ creative: Creative; mode: "live" | "mock"; log: string }> {
+  const mode = providerMode().fal;
+  const prompt = `Vertical UGC selfie still, natural light, authentic founder vibe, phone camera, soft grain, text-safe negative space, product vibe for ${opts.brief.name}: ${opts.hookText}`;
+
+  if (mode === "mock") {
+    return {
+      mode,
+      log: "FAL_KEY missing → mock still for script.",
+      creative: {
+        id: nanoid(8),
+        kind: "still",
+        prompt,
+        url: svgDataUrl(prompt.slice(0, 120), 120),
+        provider: "fal",
+        mock: true,
+      },
+    };
+  }
+
+  fal.config({ credentials: falKey() });
+  try {
+    const result = await fal.subscribe("fal-ai/flux/schnell", {
+      input: {
+        prompt,
+        image_size: { width: 768, height: 1344 },
+        num_images: 1,
+      },
+    });
+    const url =
+      (result.data as { images?: { url: string }[] })?.images?.[0]?.url || "";
+    if (!url) throw new Error("No image URL from Fal");
+    return {
+      mode: "live",
+      log: "Fal generated a still for the script",
+      creative: {
+        id: nanoid(8),
+        kind: "still",
+        prompt,
+        url,
+        provider: "fal",
+        mock: false,
+      },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "fal still error";
+    return {
+      mode: "mock",
+      log: `Fal still fallback (${message})`,
+      creative: {
+        id: nanoid(8),
+        kind: "still",
+        prompt,
+        url: svgDataUrl(prompt.slice(0, 120), 120),
+        provider: "fal",
+        mock: true,
+      },
+    };
+  }
+}
+

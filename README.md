@@ -10,9 +10,9 @@ Hackathon build for **Grok Bot Serbia** using the official partner stack.
 | --- | --- |
 | **Firecrawl** | Product page scrape → brief |
 | **Exa** | Trend research + recommended content formats/hooks |
-| **xAI (Grok)** | 7-day plan + scripts (1 Serbian) |
-| **Fal.ai** | 3 UGC stills (768×1344 / 9:16) |
-| **Daytona** | Sandbox pack, then zip pulled down for download |
+| **xAI (Grok)** | 7-day plan + English scripts, then board iterates (refine / week 2 / rewrite / adapt) |
+| **Fal.ai** | 3 UGC stills (768×1344 / 9:16), plus per-script regen |
+| **Daytona** | Sandbox pack, then zip pulled down for download (repacks after iterate) |
 | **Convex** | Optional dual-write (`convex/schema.ts` + `convex/runs.ts`) |
 | **Render** | Deploy via `render.yaml` |
 
@@ -36,6 +36,15 @@ Without keys the app still runs end-to-end with **labeled mocks**.
 - [DEMO.md](./DEMO.md)  -  jury golden path
 - [PITCH.md](./PITCH.md)  -  60s pitch
 - [BATTLEPLAN.md](./BATTLEPLAN.md)  -  scope
+
+## After the first run
+
+On a completed board you can keep going without pasting the URL again:
+
+- **Refine with Grok** (sharper hooks, founder-on-camera, louder CTA, shorter scripts)
+- **Generate week N+1**
+- **Rewrite one script** + **new still** for that script
+- **Adapt from results** — paste public post URLs and/or notes. Firecrawl tries to scrape them; Instagram/TikTok/X often block scrapers, so founder notes are the reliable signal. Grok adapts the next plan either way.
 
 ## Demo path
 

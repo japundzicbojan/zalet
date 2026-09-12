@@ -3,9 +3,10 @@ import type {
   Campaign,
   Goal,
   ProductBrief,
+  Script,
   TrendResearch,
 } from "../types";
-import { CampaignSchema } from "../types";
+import { CampaignSchema, ScriptSchema } from "../types";
 import { providerMode } from "../env";
 
 function mockCampaign(
@@ -421,4 +422,320 @@ Rules:
     mode: "mock",
     log: `xAI failed (${failDetail}) → mock.`,
   };
+}
+
+const PRESET_COPY: Record<
+  import("../types").RefinePreset,
+  string
+> = {
+  sharper_hooks:
+    "Sharpen every hook. First line must stop the scroll in under 2 seconds. Cut soft openers.",
+  founder_on_camera:
+    "Bias every day and script toward founder-on-camera UGC. Talking head first, then proof on screen.",
+  louder_cta:
+    "Make CTAs clearer and more direct. One ask per day. No vague soft closes.",
+  shorter_scripts:
+    "Tighten scripts to about 15 to 20 seconds. Fewer beats. Same punch.",
+};
+
+function applyPresetLocally(
+  campaign: Campaign,
+  preset: import("../types").RefinePreset,
+  brief: ProductBrief,
+): Campaign {
+  const next: Campaign = structuredClone(campaign);
+  if (preset === "sharper_hooks") {
+    for (const d of next.week) {
+      d.hook = d.hook.replace(/^(So |Well |Hey[, ]+)/i, "").trim();
+      if (!d.hook.endsWith(".")) d.hook = `${d.hook}.`;
+      if (d.hook.length > 90) d.hook = d.hook.slice(0, 87).trim() + "…";
+    }
+    for (const s of next.scripts) {
+      s.hookText = s.hookText.replace(/^(So |Well |Hey[, ]+)/i, "").trim();
+      if (s.beats[0]) {
+        s.beats[0].vo = s.hookText;
+      }
+    }
+  }
+  if (preset === "founder_on_camera") {
+    for (const d of next.week) {
+      d.format = "UGC talking-head + screen proof";
+      d.angle = `${d.angle} (you on camera)`;
+    }
+    for (const s of next.scripts) {
+      if (s.beats[0]) s.beats[0].visual = "Selfie phone camera, founder face";
+    }
+  }
+  if (preset === "louder_cta") {
+    for (const d of next.week) {
+      d.cta = d.cta.includes("Try")
+        ? d.cta
+        : `Try ${brief.name} today. Link in bio.`;
+    }
+    for (const s of next.scripts) {
+      s.cta = `Try ${brief.name} today.`;
+      if (s.beats.length) {
+        s.beats[s.beats.length - 1].vo = s.cta;
+        s.beats[s.beats.length - 1].onScreen = s.cta;
+      }
+    }
+  }
+  if (preset === "shorter_scripts") {
+    for (const s of next.scripts) {
+      s.beats = s.beats.slice(0, 3);
+      s.runtimeSec = Math.min(s.runtimeSec, 18);
+    }
+  }
+  next.positioning = `${next.positioning} Refined: ${PRESET_COPY[preset].slice(0, 60)}`;
+  for (const s of next.scripts) s.language = "en";
+  return next;
+}
+
+async function grokCampaignPass(opts: {
+  systemExtra: string;
+  userPayload: unknown;
+  angles: Angle[];
+  fallback: Campaign;
+  label: string;
+}): Promise<{ campaign: Campaign; mode: "live" | "mock"; log: string }> {
+  const mode = providerMode().xai;
+  if (mode === "mock") {
+    return {
+      campaign: opts.fallback,
+      mode,
+      log: `XAI_API_KEY missing → local ${opts.label}.`,
+    };
+  }
+
+  const system = `You refine promo plans for founders selling their own product.
+Never use em dashes or en dashes. No agency buzzwords.
+Return ONLY JSON with keys positioning, week (exactly 7 days), scripts (exactly 3, language always "en").
+${opts.systemExtra}
+JSON only.`;
+
+  const primary = process.env.XAI_MODEL || "grok-4.3";
+  const first = await callGrok({
+    model: primary,
+    system,
+    user: JSON.stringify(opts.userPayload),
+  });
+  if (first.ok) {
+    const parsed = parseCampaign(first.content, opts.angles);
+    if (parsed) {
+      return {
+        campaign: parsed,
+        mode: "live",
+        log: `Grok ${opts.label} (${primary})`,
+      };
+    }
+  }
+
+  return {
+    campaign: opts.fallback,
+    mode: "mock",
+    log: `xAI ${opts.label} failed → local fallback.`,
+  };
+}
+
+export async function refineCampaign(opts: {
+  brief: ProductBrief;
+  campaign: Campaign;
+  angles: Angle[];
+  preset: import("../types").RefinePreset;
+  goal: Goal;
+}): Promise<{ campaign: Campaign; mode: "live" | "mock"; log: string }> {
+  const local = applyPresetLocally(opts.campaign, opts.preset, opts.brief);
+  return grokCampaignPass({
+    systemExtra: PRESET_COPY[opts.preset],
+    userPayload: {
+      task: "refine_existing_campaign",
+      preset: opts.preset,
+      instruction: PRESET_COPY[opts.preset],
+      product: opts.brief,
+      goal: opts.goal,
+      currentCampaign: opts.campaign,
+    },
+    angles: opts.angles,
+    fallback: local,
+    label: `refine:${opts.preset}`,
+  });
+}
+
+export async function generateWeek2(opts: {
+  brief: ProductBrief;
+  campaign: Campaign;
+  angles: Angle[];
+  research?: TrendResearch;
+  goal: Goal;
+  weekNumber: number;
+}): Promise<{ campaign: Campaign; mode: "live" | "mock"; log: string }> {
+  const nextWeek = opts.weekNumber;
+  const local = structuredClone(opts.campaign);
+  const startDay = (nextWeek - 1) * 7 + 1;
+  local.week = local.week.map((d, i) => ({
+    ...d,
+    day: startDay + i,
+    hook: `Week ${nextWeek}, day ${i + 1}: ${d.angle}. New proof, same product.`,
+  }));
+  local.scripts = local.scripts.map((s, i) => ({
+    ...s,
+    dayRef: startDay + (i === 0 ? 0 : i === 1 ? 2 : 4),
+    hookText: `Week ${nextWeek}. ${s.hookText}`,
+    language: "en" as const,
+  }));
+  local.positioning = `${opts.brief.name} week ${nextWeek}: double down on what you can film this week. ${opts.brief.oneLiner}`;
+
+  return grokCampaignPass({
+    systemExtra: `This is week ${nextWeek} of the same product campaign. Days should be numbered ${startDay} to ${startDay + 6}. Do not repeat week 1 hooks. Escalate proof, objections, and social proof. Exactly 3 English scripts with dayRef inside that range.`,
+    userPayload: {
+      task: "generate_next_week",
+      weekNumber: nextWeek,
+      dayStart: startDay,
+      product: opts.brief,
+      goal: opts.goal,
+      previousCampaign: opts.campaign,
+      trendResearch: opts.research,
+      angles: opts.angles,
+    },
+    angles: opts.angles,
+    fallback: local,
+    label: `week${nextWeek}`,
+  });
+}
+
+function parseScript(content: string, fallbackDay: number): Script | null {
+  let cleaned = content.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  }
+  try {
+    const raw = JSON.parse(cleaned) as unknown;
+    const obj =
+      raw && typeof raw === "object" && "script" in raw
+        ? (raw as { script: unknown }).script
+        : raw;
+    const normalized = normalizeCampaign(
+      {
+        positioning: "x",
+        week: [
+          {
+            day: fallbackDay,
+            platform: "tiktok",
+            angle: "a",
+            format: "UGC",
+            hook: "h",
+            cta: "c",
+            kpi: "saves",
+          },
+        ],
+        scripts: [obj],
+      },
+      [],
+    );
+    if (!normalized) return null;
+    const parsed = CampaignSchema.safeParse(normalized);
+    const script = parsed.success ? parsed.data.scripts[0] : null;
+    if (!script) return null;
+    script.language = "en";
+    script.dayRef = fallbackDay;
+    return ScriptSchema.parse(script);
+  } catch {
+    return null;
+  }
+}
+
+export async function rewriteScript(opts: {
+  brief: ProductBrief;
+  script: Script;
+  instruction: string;
+}): Promise<{ script: Script; mode: "live" | "mock"; log: string }> {
+  const mode = providerMode().xai;
+  const local: Script = {
+    ...structuredClone(opts.script),
+    language: "en",
+    hookText: `${opts.instruction.replace(/\.$/, "")}. ${opts.script.hookText}`.slice(
+      0,
+      160,
+    ),
+  };
+  if (local.beats[0]) local.beats[0].vo = local.hookText;
+
+  if (mode === "mock") {
+    return {
+      script: local,
+      mode,
+      log: "XAI_API_KEY missing → local script rewrite.",
+    };
+  }
+
+  const system = `Rewrite one UGC script for a founder filming their own product.
+Return ONLY JSON: either the script object, or { "script": { ... } }.
+Fields: dayRef, language ("en"), hookText, runtimeSec, beats[{t,visual,vo,onScreen}], cta.
+Never use em dashes or en dashes. English only. JSON only.`;
+
+  const primary = process.env.XAI_MODEL || "grok-4.3";
+  const first = await callGrok({
+    model: primary,
+    system,
+    user: JSON.stringify({
+      product: opts.brief,
+      instruction: opts.instruction,
+      currentScript: opts.script,
+    }),
+  });
+  if (first.ok) {
+    const parsed = parseScript(first.content, opts.script.dayRef);
+    if (parsed) {
+      return {
+        script: parsed,
+        mode: "live",
+        log: `Grok rewrote Day ${opts.script.dayRef} script`,
+      };
+    }
+  }
+
+  return {
+    script: local,
+    mode: "mock",
+    log: "xAI script rewrite failed → local tweak.",
+  };
+}
+
+export async function adaptCampaignFromResults(opts: {
+  brief: ProductBrief;
+  campaign: Campaign;
+  angles: Angle[];
+  goal: Goal;
+  notes?: string;
+  signals: import("../types").ResultSignal[];
+}): Promise<{ campaign: Campaign; mode: "live" | "mock"; log: string }> {
+  const local = structuredClone(opts.campaign);
+  const note = (opts.notes || "").trim();
+  if (note) {
+    local.positioning = `${local.positioning} Adapted from results: ${note.slice(0, 120)}`;
+    for (const d of local.week) {
+      d.hook = `Based on what worked: ${d.hook}`;
+    }
+  }
+
+  return grokCampaignPass({
+    systemExtra: `Adapt the next 7-day plan using campaign results the founder shared.
+Double down on hooks/formats that worked. Drop what flopped.
+If scrape excerpts are thin (common on Instagram/TikTok), lean on the founder's notes.
+Keep days 1..7. Exactly 3 English scripts.`,
+    userPayload: {
+      task: "adapt_from_results",
+      product: opts.brief,
+      goal: opts.goal,
+      founderNotes: opts.notes,
+      resultSignals: opts.signals,
+      currentCampaign: opts.campaign,
+      angles: opts.angles,
+      scrapeCaveat:
+        "Social networks often block scrapers. Treat missing scrape data as normal.",
+    },
+    angles: opts.angles,
+    fallback: local,
+    label: "adapt_results",
+  });
 }

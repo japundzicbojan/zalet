@@ -117,6 +117,14 @@ export const RunStatusSchema = z.enum([
 ]);
 export type RunStatus = z.infer<typeof RunStatusSchema>;
 
+export const ResultSignalSchema = z.object({
+  url: z.string(),
+  title: z.string().optional(),
+  excerpt: z.string().optional(),
+  scraped: z.boolean().default(false),
+});
+export type ResultSignal = z.infer<typeof ResultSignalSchema>;
+
 export const RunSchema = z.object({
   id: z.string(),
   createdAt: z.number(),
@@ -148,6 +156,14 @@ export const RunSchema = z.object({
     fal: z.enum(["live", "mock"]),
     daytona: z.enum(["live", "mock"]),
   }),
+  iteration: z
+    .object({
+      weekNumber: z.number().int().min(1).default(1),
+      lastAction: z.string().optional(),
+      resultsNotes: z.string().optional(),
+      resultSignals: z.array(ResultSignalSchema).optional(),
+    })
+    .optional(),
   error: z.string().optional(),
 });
 export type Run = z.infer<typeof RunSchema>;
@@ -158,3 +174,37 @@ export const CreateRunInputSchema = z.object({
   goal: GoalSchema.default("launch"),
 });
 export type CreateRunInput = z.infer<typeof CreateRunInputSchema>;
+
+export const RefinePresetSchema = z.enum([
+  "sharper_hooks",
+  "founder_on_camera",
+  "louder_cta",
+  "shorter_scripts",
+]);
+export type RefinePreset = z.infer<typeof RefinePresetSchema>;
+
+export const IterateActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("refine"),
+    preset: RefinePresetSchema,
+  }),
+  z.object({
+    action: z.literal("week2"),
+  }),
+  z.object({
+    action: z.literal("rewrite_script"),
+    dayRef: z.number().int().min(1).max(14),
+    instruction: z.string().min(3).max(400),
+  }),
+  z.object({
+    action: z.literal("new_still"),
+    dayRef: z.number().int().min(1).max(14).optional(),
+    scriptIndex: z.number().int().min(0).max(2).optional(),
+  }),
+  z.object({
+    action: z.literal("adapt_results"),
+    postUrls: z.array(z.string().url()).max(5).default([]),
+    notes: z.string().max(1200).optional(),
+  }),
+]);
+export type IterateAction = z.infer<typeof IterateActionSchema>;
