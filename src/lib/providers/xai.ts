@@ -132,6 +132,182 @@ function mockCampaign(
   };
 }
 
+const PLATFORM = new Set(["tiktok", "ig-reels", "x", "linkedin"]);
+
+function asString(v: unknown, fallback = ""): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return fallback;
+}
+
+function asNumber(v: unknown, fallback = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() && !Number.isNaN(Number(v))) {
+    return Number(v);
+  }
+  return fallback;
+}
+
+function pick<T = unknown>(obj: Record<string, unknown>, keys: string[]): T | undefined {
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null) return obj[k] as T;
+  }
+  return undefined;
+}
+
+function normalizeCampaign(
+  raw: unknown,
+  angles: Angle[],
+): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const root = raw as Record<string, unknown>;
+  const nested =
+    (root.campaign as Record<string, unknown> | undefined) ||
+    (root.data as Record<string, unknown> | undefined) ||
+    root;
+
+  const weekRaw =
+    pick<unknown[]>(nested, ["week", "days", "plan", "calendar", "schedule"]) ||
+    [];
+  const scriptsRaw =
+    pick<unknown[]>(nested, ["scripts", "ugcScripts", "videos"]) || [];
+
+  const week = (Array.isArray(weekRaw) ? weekRaw : []).slice(0, 7).map((item, i) => {
+    const d = (item && typeof item === "object" ? item : {}) as Record<
+      string,
+      unknown
+    >;
+    let platform = asString(
+      pick(d, ["platform", "channel", "network"]),
+      "tiktok",
+    ).toLowerCase();
+    if (platform === "instagram" || platform === "reels" || platform === "ig") {
+      platform = "ig-reels";
+    }
+    if (platform === "twitter" || platform === "twitter/x") platform = "x";
+    if (!PLATFORM.has(platform)) platform = "tiktok";
+
+    return {
+      day: asNumber(pick(d, ["day", "dayNumber", "n"]), i + 1),
+      platform,
+      angle: asString(pick(d, ["angle", "theme", "topic"]), angles[i % angles.length]?.title || "Founder pain"),
+      format: asString(pick(d, ["format", "type"]), "UGC talking-head"),
+      hook: asString(pick(d, ["hook", "hookText", "headline", "title"])),
+      cta: asString(pick(d, ["cta", "callToAction", "call_to_action"]), "Try it"),
+      kpi: asString(pick(d, ["kpi", "metric"]), "saves"),
+    };
+  });
+
+  const scripts = (Array.isArray(scriptsRaw) ? scriptsRaw : []).slice(0, 3).map(
+    (item, i) => {
+      const s = (item && typeof item === "object" ? item : {}) as Record<
+        string,
+        unknown
+      >;
+      let language = asString(pick(s, ["language", "lang"]), i === 2 ? "sr" : "en")
+        .toLowerCase()
+        .slice(0, 2);
+      if (language !== "sr" && language !== "en") language = i === 2 ? "sr" : "en";
+
+      const beatsRaw = pick<unknown[]>(s, ["beats", "scenes", "shots"]) || [];
+      const beats = (Array.isArray(beatsRaw) ? beatsRaw : []).map((b, bi) => {
+        const beat = (b && typeof b === "object" ? b : {}) as Record<
+          string,
+          unknown
+        >;
+        return {
+          t: asNumber(pick(beat, ["t", "time", "sec", "second"]), bi * 6),
+          visual: asString(pick(beat, ["visual", "shot", "scene"]), "Founder selfie"),
+          vo: asString(pick(beat, ["vo", "voiceover", "dialogue", "line"])),
+          onScreen: asString(
+            pick(beat, ["onScreen", "onscreen", "text", "caption"]),
+            "",
+          ),
+        };
+      });
+
+      return {
+        dayRef: asNumber(pick(s, ["dayRef", "day", "dayNumber"]), i === 0 ? 1 : i === 1 ? 3 : 5),
+        language,
+        hookText: asString(pick(s, ["hookText", "hook", "opening", "title"])),
+        runtimeSec: asNumber(pick(s, ["runtimeSec", "runtime", "duration", "seconds"]), 20),
+        beats:
+          beats.length > 0
+            ? beats
+            : [
+                {
+                  t: 0,
+                  visual: "Founder selfie",
+                  vo: asString(pick(s, ["hookText", "hook"]), "Hook"),
+                  onScreen: "Hook",
+                },
+              ],
+        cta: asString(pick(s, ["cta", "callToAction"]), "Try it"),
+      };
+    },
+  );
+
+  // Ensure one Serbian script
+  if (scripts.length && !scripts.some((s) => s.language === "sr")) {
+    scripts[scripts.length - 1].language = "sr";
+  }
+
+  return {
+    positioning: asString(
+      pick(nested, ["positioning", "position", "thesis", "summary", "tagline"]),
+      "Founder-led UGC for the first week after launch.",
+    ),
+    week,
+    scripts,
+    angles,
+  };
+}
+
+function parseCampaign(content: string, angles: Angle[]): Campaign | null {
+  let cleaned = content.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  }
+  try {
+    const raw = JSON.parse(cleaned) as unknown;
+    const normalized = normalizeCampaign(raw, angles);
+    if (!normalized) return null;
+    return CampaignSchema.parse(normalized);
+  } catch {
+    return null;
+  }
+}
+
+async function callGrok(opts: {
+  model: string;
+  system: string;
+  user: string;
+}): Promise<{ ok: true; content: string } | { ok: false; status: number; text: string }> {
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.XAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: opts.model,
+      temperature: 0.35,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: opts.system },
+        { role: "user", content: opts.user },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    return { ok: false, status: res.status, text: await res.text() };
+  }
+  const data = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  return { ok: true, content: data.choices?.[0]?.message?.content || "{}" };
+}
+
 export async function generateCampaign(opts: {
   brief: ProductBrief;
   angles: Angle[];
@@ -147,7 +323,39 @@ export async function generateCampaign(opts: {
     };
   }
 
-  const system = `You are a sharp founder marketing strategist. Return ONLY valid JSON. One script must be language:"sr". Platforms: tiktok|ig-reels|x|linkedin. Exactly 7 days and 3 scripts.`;
+  const system = `You are a sharp founder marketing strategist for early-stage products.
+Return ONLY a JSON object with EXACTLY these top-level keys:
+{
+  "positioning": string,
+  "week": [
+    {
+      "day": 1-7,
+      "platform": "tiktok" | "ig-reels" | "x" | "linkedin",
+      "angle": string,
+      "format": string,
+      "hook": string,
+      "cta": string,
+      "kpi": string
+    }
+  ],
+  "scripts": [
+    {
+      "dayRef": number,
+      "language": "en" | "sr",
+      "hookText": string,
+      "runtimeSec": number,
+      "beats": [
+        { "t": number, "visual": string, "vo": string, "onScreen": string }
+      ],
+      "cta": string
+    }
+  ]
+}
+Rules:
+- Exactly 7 items in week (days 1..7).
+- Exactly 3 scripts; one MUST have language "sr" (Serbian), two "en".
+- No markdown, no commentary, JSON only.`;
+
   const user = JSON.stringify({
     product: opts.brief,
     angles: opts.angles,
@@ -155,90 +363,40 @@ export async function generateCampaign(opts: {
     goal: opts.goal,
   });
 
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.XAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      // Prefer currently available console models; fall through on 4xx.
-      model: process.env.XAI_MODEL || "grok-3",
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
+  const primary = process.env.XAI_MODEL || "grok-4.3";
+  const first = await callGrok({ model: primary, system, user });
+  if (first.ok) {
+    const parsed = parseCampaign(first.content, opts.angles);
+    if (parsed) {
+      return {
+        campaign: parsed,
+        mode: "live",
+        log: `Grok (${primary}) generated strategy + scripts`,
+      };
+    }
+  }
 
-  if (!res.ok) {
-    const text = await res.text();
-    // Retry once with grok-3-mini if primary model fails.
-    if (!process.env.XAI_MODEL) {
-      const retry = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.XAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "grok-3-mini",
-          temperature: 0.4,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-        }),
-      });
-      if (retry.ok) {
-        const retryData = (await retry.json()) as {
-          choices?: { message?: { content?: string } }[];
+  if (!process.env.XAI_MODEL) {
+    const retry = await callGrok({ model: "grok-4.6", system, user });
+    if (retry.ok) {
+      const parsed = parseCampaign(retry.content, opts.angles);
+      if (parsed) {
+        return {
+          campaign: parsed,
+          mode: "live",
+          log: "Grok-4.6 (xAI) generated strategy + scripts",
         };
-        const content = retryData.choices?.[0]?.message?.content || "{}";
-        try {
-          const parsed = CampaignSchema.parse({
-            ...JSON.parse(content),
-            angles: opts.angles,
-          });
-          return {
-            campaign: parsed,
-            mode: "live",
-            log: "Grok-3-mini (xAI) generated strategy + scripts",
-          };
-        } catch {
-          /* fall through to mock */
-        }
       }
     }
-    return {
-      campaign: mockCampaign(opts.brief, opts.angles, opts.goal),
-      mode: "mock",
-      log: `xAI failed (${res.status}): ${text.slice(0, 180)} → mock. Re-copy key from https://console.x.ai (usually starts with xai-).`,
-    };
   }
 
-  const data = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
+  const failDetail = first.ok
+    ? `JSON shape mismatch: ${first.content.slice(0, 160)}`
+    : `${first.status}: ${first.text.slice(0, 160)}`;
+
+  return {
+    campaign: mockCampaign(opts.brief, opts.angles, opts.goal),
+    mode: "mock",
+    log: `xAI failed (${failDetail}) → mock.`,
   };
-  const content = data.choices?.[0]?.message?.content || "{}";
-  try {
-    const parsed = CampaignSchema.parse({
-      ...JSON.parse(content),
-      angles: opts.angles,
-    });
-    return {
-      campaign: parsed,
-      mode: "live",
-      log: "Grok (xAI) generated strategy + scripts",
-    };
-  } catch (err) {
-    return {
-      campaign: mockCampaign(opts.brief, opts.angles, opts.goal),
-      mode: "mock",
-      log: `Grok JSON invalid (${err instanceof Error ? err.message : "error"}) → mock.`,
-    };
-  }
 }
