@@ -162,7 +162,8 @@ export async function generateCampaign(opts: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "grok-2-latest",
+      // Prefer currently available console models; fall through on 4xx.
+      model: process.env.XAI_MODEL || "grok-3",
       temperature: 0.4,
       response_format: { type: "json_object" },
       messages: [
@@ -174,10 +175,48 @@ export async function generateCampaign(opts: {
 
   if (!res.ok) {
     const text = await res.text();
+    // Retry once with grok-3-mini if primary model fails.
+    if (!process.env.XAI_MODEL) {
+      const retry = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.XAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "grok-3-mini",
+          temperature: 0.4,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+        }),
+      });
+      if (retry.ok) {
+        const retryData = (await retry.json()) as {
+          choices?: { message?: { content?: string } }[];
+        };
+        const content = retryData.choices?.[0]?.message?.content || "{}";
+        try {
+          const parsed = CampaignSchema.parse({
+            ...JSON.parse(content),
+            angles: opts.angles,
+          });
+          return {
+            campaign: parsed,
+            mode: "live",
+            log: "Grok-3-mini (xAI) generated strategy + scripts",
+          };
+        } catch {
+          /* fall through to mock */
+        }
+      }
+    }
     return {
       campaign: mockCampaign(opts.brief, opts.angles, opts.goal),
       mode: "mock",
-      log: `xAI failed (${res.status}): ${text.slice(0, 180)} → mock.`,
+      log: `xAI failed (${res.status}): ${text.slice(0, 180)} → mock. Re-copy key from https://console.x.ai (usually starts with xai-).`,
     };
   }
 

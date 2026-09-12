@@ -1,4 +1,6 @@
 import { Daytona } from "@daytona/sdk";
+import FormData from "form-data";
+void FormData;
 import type { Campaign, Creative, ProductBrief } from "../types";
 import { providerMode } from "../env";
 
@@ -126,20 +128,30 @@ export async function packInDaytona(opts: {
     );
     logs.push("$ uploaded README.md strategy.json index.html");
 
+    // Prefer python zipfile — many snapshots don't include the zip binary.
     const zip = await sandbox.process.executeCommand(
-      "cd /home/daytona/zalet && zip -r campaign.zip README.md strategy.json index.html && ls -la",
+      `cd /home/daytona/zalet && python3 - <<'PY'
+import zipfile
+with zipfile.ZipFile('campaign.zip', 'w') as z:
+    for name in ('README.md', 'strategy.json', 'index.html'):
+        z.write(name)
+print('zipped', z.filename)
+PY
+ls -la`,
     );
-    logs.push("$ zip -r campaign.zip ...");
+    logs.push("$ python3 zipfile → campaign.zip");
     if (zip.result) logs.push(String(zip.result).slice(0, 1500));
 
     let previewUrl: string | undefined;
     try {
       await sandbox.process.executeCommand(
-        "cd /home/daytona/zalet && nohup python3 -m http.server 3000 >/tmp/http.log 2>&1 &",
+        "cd /home/daytona/zalet && nohup python3 -m http.server 3000 >/tmp/http.log 2>&1 & sleep 1",
       );
       const preview = await sandbox.getPreviewLink(3000);
-      previewUrl = preview.url;
-      logs.push(`$ preview → ${previewUrl}`);
+      previewUrl =
+        (preview as { url?: string }).url ||
+        (preview as { link?: string }).link;
+      logs.push(`$ preview → ${previewUrl || "(no url field)"}`);
     } catch (err) {
       logs.push(
         `preview skipped: ${err instanceof Error ? err.message : "error"}`,

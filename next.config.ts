@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["@daytonaio/sdk", "@daytona/sdk", "form-data", "axios"],
 };
 
 export default nextConfig;
