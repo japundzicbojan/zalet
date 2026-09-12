@@ -22,8 +22,8 @@ export default function HomePage() {
             Zalet
           </h1>
         </div>
-        <p className="hidden max-w-[14rem] text-right text-xs leading-relaxed text-[var(--muted)] sm:block">
-          Firecrawl, Exa, xAI, Fal, Daytona
+        <p className="hidden max-w-[16rem] text-right text-xs leading-relaxed text-[var(--muted)] sm:block">
+          Firecrawl · Exa · xAI · Fal · Daytona · Convex · Render
         </p>
       </header>
 

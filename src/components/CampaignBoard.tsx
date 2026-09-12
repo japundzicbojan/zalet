@@ -40,6 +40,28 @@ function eventTone(level: TraceEvent["level"]) {
   return "text-[var(--muted)]";
 }
 
+function CopyBoardLink({ runId }: { runId: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        const link = `${window.location.origin}/c/${runId}`;
+        try {
+          await navigator.clipboard.writeText(link);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1600);
+        } catch {
+          /* ignore */
+        }
+      }}
+      className="border border-[var(--line)] bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]"
+    >
+      {copied ? "Link copied" : "Copy board link"}
+    </button>
+  );
+}
+
 export function CampaignBoard({ runId }: { runId: string }) {
   const [run, setRun] = useState<Run | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +173,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
                 Download zip
               </a>
             ) : null}
+            <CopyBoardLink runId={run.id} />
             <a
               href={run.input.url}
               target="_blank"
