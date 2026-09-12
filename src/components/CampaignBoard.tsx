@@ -140,7 +140,15 @@ export function CampaignBoard({ runId }: { runId: string }) {
                 rel="noreferrer"
                 className="border border-[var(--ink)] bg-[var(--ink)] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent)]"
               >
-                Open the Daytona pack
+                Open pack preview
+              </a>
+            ) : null}
+            {run.daytona?.zipReady ? (
+              <a
+                href={`/api/runs/${run.id}/zip`}
+                className="border border-[var(--line)] bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]"
+              >
+                Download zip
               </a>
             ) : null}
             <a

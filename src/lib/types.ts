@@ -137,6 +137,7 @@ export const RunSchema = z.object({
       sandboxId: z.string().optional(),
       previewUrl: z.string().optional(),
       zipPath: z.string().optional(),
+      zipReady: z.boolean().default(false),
       mock: z.boolean().default(true),
     })
     .optional(),

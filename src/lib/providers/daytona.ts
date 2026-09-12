@@ -3,12 +3,14 @@ import FormData from "form-data";
 void FormData;
 import type { Campaign, Creative, ProductBrief } from "../types";
 import { providerMode } from "../env";
+import { savePackPreviewHtml, savePackZip } from "../store";
 
 export type DaytonaPackResult = {
   mode: "live" | "mock";
   sandboxId?: string;
   previewUrl?: string;
   zipPath?: string;
+  zipReady: boolean;
   logs: string[];
   mock: boolean;
 };
@@ -81,7 +83,99 @@ ${creatives
   return { readme, strategy, indexHtml };
 }
 
+async function zipBuffers(files: {
+  readme: string;
+  strategy: string;
+  indexHtml: string;
+}): Promise<Buffer> {
+  return zipWithStore(files);
+}
+
+/** Minimal ZIP (store only) without extra deps. */
+function zipWithStore(files: {
+  readme: string;
+  strategy: string;
+  indexHtml: string;
+}): Buffer {
+  const entries: { name: string; data: Buffer }[] = [
+    { name: "README.md", data: Buffer.from(files.readme, "utf8") },
+    { name: "strategy.json", data: Buffer.from(files.strategy, "utf8") },
+    { name: "index.html", data: Buffer.from(files.indexHtml, "utf8") },
+  ];
+
+  const parts: Buffer[] = [];
+  const central: Buffer[] = [];
+  let offset = 0;
+
+  for (const e of entries) {
+    const nameBuf = Buffer.from(e.name, "utf8");
+    const local = Buffer.alloc(30 + nameBuf.length);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(0, 8); // store
+    local.writeUInt16LE(0, 10);
+    local.writeUInt16LE(0, 12);
+    local.writeUInt32LE(crc32(e.data), 14);
+    local.writeUInt32LE(e.data.length, 18);
+    local.writeUInt32LE(e.data.length, 22);
+    local.writeUInt16LE(nameBuf.length, 26);
+    local.writeUInt16LE(0, 28);
+    nameBuf.copy(local, 30);
+
+    parts.push(local, e.data);
+
+    const cen = Buffer.alloc(46 + nameBuf.length);
+    cen.writeUInt32LE(0x02014b50, 0);
+    cen.writeUInt16LE(20, 4);
+    cen.writeUInt16LE(20, 6);
+    cen.writeUInt16LE(0, 8);
+    cen.writeUInt16LE(0, 10);
+    cen.writeUInt16LE(0, 12);
+    cen.writeUInt16LE(0, 14);
+    cen.writeUInt32LE(crc32(e.data), 16);
+    cen.writeUInt32LE(e.data.length, 20);
+    cen.writeUInt32LE(e.data.length, 24);
+    cen.writeUInt16LE(nameBuf.length, 28);
+    cen.writeUInt16LE(0, 30);
+    cen.writeUInt16LE(0, 32);
+    cen.writeUInt16LE(0, 34);
+    cen.writeUInt16LE(0, 36);
+    cen.writeUInt32LE(0, 38);
+    cen.writeUInt32LE(offset, 42);
+    nameBuf.copy(cen, 46);
+    central.push(cen);
+
+    offset += local.length + e.data.length;
+  }
+
+  const centralBuf = Buffer.concat(central);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralBuf.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+
+  return Buffer.concat([...parts, centralBuf, end]);
+}
+
+function crc32(buf: Buffer): number {
+  let c = ~0;
+  for (let i = 0; i < buf.length; i++) {
+    c ^= buf[i]!;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1;
+    }
+  }
+  return ~c >>> 0;
+}
+
 export async function packInDaytona(opts: {
+  runId: string;
   brief: ProductBrief;
   campaign: Campaign;
   creatives: Creative[];
@@ -90,19 +184,27 @@ export async function packInDaytona(opts: {
   const files = buildFiles(opts.brief, opts.campaign, opts.creatives);
   const logs: string[] = [];
 
+  // Always keep a local preview + zip so the board can download even if sandbox dies.
+  await savePackPreviewHtml(opts.runId, files.indexHtml);
+  const localZip = await zipBuffers(files);
+  const zipPath = await savePackZip(opts.runId, localZip);
+  logs.push(`$ local pack → ${zipPath}`);
+
+  const localPreview = `/api/runs/${opts.runId}/preview`;
+
   if (mode === "mock") {
     logs.push("$ # MOCK Daytona sandbox (DAYTONA_API_KEY missing)");
     logs.push("$ mkdir -p /tmp/zalet-campaign && cd /tmp/zalet-campaign");
     logs.push("$ cat > README.md strategy.json index.html");
     logs.push("$ zip -r campaign.zip README.md strategy.json index.html");
     logs.push("adding: README.md / strategy.json / index.html");
-    logs.push("$ python3 -m http.server 3000");
-    logs.push("Serving campaign board on preview (mock)");
+    logs.push("$ # serving via Zalet preview route");
     return {
       mode,
       sandboxId: "mock-sandbox",
-      previewUrl: undefined,
-      zipPath: "/tmp/zalet-campaign/campaign.zip",
+      previewUrl: localPreview,
+      zipPath,
+      zipReady: true,
       logs,
       mock: true,
     };
@@ -128,7 +230,6 @@ export async function packInDaytona(opts: {
     );
     logs.push("$ uploaded README.md strategy.json index.html");
 
-    // Prefer python zipfile  -  many snapshots don't include the zip binary.
     const zip = await sandbox.process.executeCommand(
       `cd /home/daytona/zalet && python3 - <<'PY'
 import zipfile
@@ -142,27 +243,57 @@ ls -la`,
     logs.push("$ python3 zipfile → campaign.zip");
     if (zip.result) logs.push(String(zip.result).slice(0, 1500));
 
-    let previewUrl: string | undefined;
     try {
-      await sandbox.process.executeCommand(
-        "cd /home/daytona/zalet && nohup python3 -m http.server 3000 >/tmp/http.log 2>&1 & sleep 1",
+      const remoteZip = await sandbox.fs.downloadFile(
+        "/home/daytona/zalet/campaign.zip",
       );
-      const preview = await sandbox.getPreviewLink(3000);
-      previewUrl =
-        (preview as { url?: string }).url ||
-        (preview as { link?: string }).link;
-      logs.push(`$ preview → ${previewUrl || "(no url field)"}`);
+      await savePackZip(opts.runId, remoteZip);
+      logs.push("$ downloaded campaign.zip from sandbox → local pack");
     } catch (err) {
       logs.push(
-        `preview skipped: ${err instanceof Error ? err.message : "error"}`,
+        `zip download skipped (using local zip): ${err instanceof Error ? err.message : "error"}`,
       );
+    }
+
+    let previewUrl: string | undefined = localPreview;
+    const keepSandbox =
+      process.env.DAYTONA_KEEP_SANDBOX === "1" ||
+      process.env.DAYTONA_KEEP_SANDBOX === "true";
+
+    if (keepSandbox) {
+      try {
+        await sandbox.process.executeCommand(
+          "cd /home/daytona/zalet && nohup python3 -m http.server 3000 >/tmp/http.log 2>&1 & sleep 1",
+        );
+        const preview = await sandbox.getPreviewLink(3000);
+        previewUrl =
+          (preview as { url?: string }).url ||
+          (preview as { link?: string }).link ||
+          localPreview;
+        logs.push(`$ preview → ${previewUrl}`);
+      } catch (err) {
+        logs.push(
+          `preview skipped: ${err instanceof Error ? err.message : "error"}`,
+        );
+      }
+    } else {
+      try {
+        await daytona.delete(sandbox);
+        logs.push("$ daytona.delete() → sandbox cleaned up (zip kept locally)");
+      } catch (err) {
+        logs.push(
+          `cleanup skipped: ${err instanceof Error ? err.message : "error"}`,
+        );
+      }
+      logs.push(`$ local preview → ${localPreview}`);
     }
 
     return {
       mode: "live",
-      sandboxId: sandbox.id,
+      sandboxId: keepSandbox ? sandbox.id : undefined,
       previewUrl,
-      zipPath: "/home/daytona/zalet/campaign.zip",
+      zipPath,
+      zipReady: true,
       logs,
       mock: false,
     };
@@ -170,9 +301,18 @@ ls -la`,
     logs.push(
       `Daytona error: ${err instanceof Error ? err.message : "unknown"}`,
     );
+    try {
+      await daytona.delete(sandbox);
+      logs.push("$ daytona.delete() after error");
+    } catch {
+      /* ignore */
+    }
     return {
       mode: "mock",
       sandboxId: sandbox.id,
+      previewUrl: localPreview,
+      zipPath,
+      zipReady: true,
       logs,
       mock: true,
     };

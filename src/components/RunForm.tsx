@@ -58,7 +58,7 @@ export function RunForm() {
           Start a zalet
         </p>
         <p className="text-sm text-[var(--muted)]">
-          Roughly a minute. Then you’re on the live board.
+          Board opens instantly. Trace fills as partners finish.
         </p>
       </div>
 
@@ -126,7 +126,7 @@ export function RunForm() {
         {busy ? (
           <span className="inline-flex items-center gap-2">
             <span className="h-1.5 w-1.5 animate-pulse rounded-[1px] bg-white" />
-            Working on it
+            Opening your board
           </span>
         ) : (
           "Napravi zalet"
@@ -134,7 +134,8 @@ export function RunForm() {
       </button>
 
       <p className="text-xs leading-relaxed text-[var(--muted)]">
-        Trends, a 7-day plan, scripts to film, stills, and a Daytona pack.
+        You land on the live board right away while research, plan, stills, and
+        the Daytona pack fill in.
       </p>
     </form>
   );

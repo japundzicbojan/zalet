@@ -61,7 +61,8 @@ export async function generateCreatives(
         const result = await fal.subscribe("fal-ai/flux/schnell", {
           input: {
             prompt,
-            image_size: "portrait_16_9",
+            // Explicit 9:16 UGC still (avoid ambiguous portrait_16_9 enum).
+            image_size: { width: 768, height: 1344 },
             num_images: 1,
           },
         });

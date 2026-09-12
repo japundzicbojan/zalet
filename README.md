@@ -11,9 +11,9 @@ Hackathon build for **Grok Bot Serbia** using the official partner stack.
 | **Firecrawl** | Product page scrape → brief |
 | **Exa** | Trend research + recommended content formats/hooks |
 | **xAI (Grok)** | 7-day plan + scripts (1 Serbian) |
-| **Fal.ai** | 3 UGC stills |
-| **Daytona** | Sandbox pack (`README` + `strategy.json` + `index.html` + zip + preview) |
-| **Convex** | Schema ready for live board (`convex/schema.ts`)  -  file store fallback until URL set |
+| **Fal.ai** | 3 UGC stills (768×1344 / 9:16) |
+| **Daytona** | Sandbox pack, then zip is pulled down locally for download |
+| **Convex** | Optional dual-write (`convex/schema.ts` + `convex/runs.ts`) once deployed |
 | **Render** | Deploy via `render.yaml` |
 
 Wispr Flow = voice while building. Wonder = optional design pass later.
@@ -23,25 +23,36 @@ Wispr Flow = voice while building. Wonder = optional design pass later.
 ```bash
 pnpm install
 cp .env.example .env.local
-pnpm dev
+pnpm dev --port 43123
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://127.0.0.1:43123](http://127.0.0.1:43123).
 
 Without keys the app still runs end-to-end with **labeled mocks** so the demo path works.
 
 ## Demo path
 
 1. Paste product URL (+ ICP / goal)
-2. Watch agent trace: Firecrawl → Exa → Grok → Fal → Daytona
-3. Open `/c/[runId]` board: week plan, scripts, creatives, sandbox logs
+2. Land on `/c/[runId]` immediately (run is async)
+3. Watch agent trace fill: Firecrawl → Exa → Grok → Fal → Daytona
+4. Download the zip, open pack preview, share the board link
+
+## Env
+
+See `.env.example`. Notable extras:
+
+- `ZALET_DATA_DIR`  -  durable data root (use a Render disk mount in prod)
+- `ZALET_RUN_SECRET`  -  required as `x-zalet-token` to `GET /api/runs` (list)
+- `DAYTONA_KEEP_SANDBOX=1`  -  keep Daytona sandbox + remote preview (default: delete after pack)
 
 ## Scripts
 
-- `pnpm dev`  -  local
+- `pnpm dev --port 43123`  -  local
 - `pnpm build && pnpm start`  -  production (Render)
 
 ## Notes
 
-- Daytona is load-bearing: campaign artifacts are written/zipped inside a sandbox when `DAYTONA_API_KEY` is set.
-- Convex can replace `.data/runs` once `NEXT_PUBLIC_CONVEX_URL` is configured.
+- `POST /api/runs` returns `202` with the run id and finishes the pipeline in the background.
+- Run ids are sanitized; packs live under `.data/packs/[id]/`.
+- Create is rate-limited (5/min/IP). Listing is hidden unless `ZALET_RUN_SECRET` is set.
+- Convex: `npx convex dev` then set `NEXT_PUBLIC_CONVEX_URL` for dual-write.

@@ -21,13 +21,14 @@ async function currentProviders(id: string, fallback: Run["providers"]) {
   return (await getRun(id))?.providers || fallback;
 }
 
-export async function createAndRun(input: CreateRunInput): Promise<Run> {
+/** Create a queued run and persist it. Does not execute the pipeline. */
+export async function createQueuedRun(input: CreateRunInput): Promise<Run> {
   const modes = providerMode();
   const run: Run = {
     id: nanoid(12),
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    status: "running",
+    status: "queued",
     input: {
       url: input.url,
       icp: input.icp,
@@ -35,7 +36,7 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     },
     creatives: [],
     events: [
-      ev("init", "system", "info", `Run started for ${input.url}`),
+      ev("init", "system", "info", `Queued for ${input.url}`),
       ev(
         "init",
         "system",
@@ -52,23 +53,38 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     },
   };
 
-  await saveRun(run);
+  return saveRun(run);
+}
+
+/** Execute the full partner pipeline for an existing run id. */
+export async function executeRun(runId: string): Promise<Run> {
+  const existing = await getRun(runId);
+  if (!existing) throw new Error("Run not found");
+
+  const input = existing.input;
+  const modes = providerMode();
+
+  await patchRun(runId, { status: "running" });
+  await appendEvent(
+    runId,
+    ev("init", "system", "info", `Run started for ${input.url}`),
+  );
 
   try {
     await appendEvent(
-      run.id,
+      runId,
       ev("research", "firecrawl", "cmd", `scrape ${input.url}`),
     );
     const scraped = await scrapeProduct(input.url);
-    await patchRun(run.id, {
+    await patchRun(runId, {
       product: scraped.brief,
       providers: {
-        ...(await currentProviders(run.id, run.providers)),
+        ...(await currentProviders(runId, existing.providers)),
         firecrawl: scraped.mode,
       },
     });
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "research",
         "firecrawl",
@@ -78,7 +94,7 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     );
 
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "research",
         "exa",
@@ -87,15 +103,15 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
       ),
     );
     const researched = await researchTrends(scraped.brief, input.icp);
-    await patchRun(run.id, {
+    await patchRun(runId, {
       research: researched.research,
       providers: {
-        ...(await currentProviders(run.id, run.providers)),
+        ...(await currentProviders(runId, existing.providers)),
         exa: researched.mode,
       },
     });
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "research",
         "exa",
@@ -106,7 +122,7 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     if (researched.research.recommendations[0]) {
       const top = researched.research.recommendations[0];
       await appendEvent(
-        run.id,
+        runId,
         ev(
           "research",
           "exa",
@@ -117,7 +133,7 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     }
 
     await appendEvent(
-      run.id,
+      runId,
       ev("strategy", "xai", "cmd", "Grok: 7-day plan + UGC scripts"),
     );
     const strategy = await generateCampaign({
@@ -127,15 +143,15 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
       icp: input.icp,
       goal: input.goal ?? "launch",
     });
-    await patchRun(run.id, {
+    await patchRun(runId, {
       campaign: strategy.campaign,
       providers: {
-        ...(await currentProviders(run.id, run.providers)),
+        ...(await currentProviders(runId, existing.providers)),
         xai: strategy.mode,
       },
     });
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "strategy",
         "xai",
@@ -145,22 +161,22 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     );
 
     await appendEvent(
-      run.id,
+      runId,
       ev("creatives", "fal", "cmd", "Fal flux/schnell × 3 UGC stills"),
     );
     const creatives = await generateCreatives(
       scraped.brief,
       strategy.campaign,
     );
-    await patchRun(run.id, {
+    await patchRun(runId, {
       creatives: creatives.creatives,
       providers: {
-        ...(await currentProviders(run.id, run.providers)),
+        ...(await currentProviders(runId, existing.providers)),
         fal: creatives.mode,
       },
     });
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "creatives",
         "fal",
@@ -170,34 +186,36 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     );
 
     await appendEvent(
-      run.id,
+      runId,
       ev("pack", "daytona", "cmd", "sandbox: write pack + zip + preview"),
     );
     const packed = await packInDaytona({
+      runId,
       brief: scraped.brief,
       campaign: strategy.campaign,
       creatives: creatives.creatives,
     });
     for (const line of packed.logs) {
       await appendEvent(
-        run.id,
+        runId,
         ev("pack", "daytona", line.startsWith("$") ? "cmd" : "stdout", line),
       );
     }
-    await patchRun(run.id, {
+    await patchRun(runId, {
       daytona: {
         sandboxId: packed.sandboxId,
         previewUrl: packed.previewUrl,
         zipPath: packed.zipPath,
+        zipReady: packed.zipReady,
         mock: packed.mock,
       },
       providers: {
-        ...(await currentProviders(run.id, run.providers)),
+        ...(await currentProviders(runId, existing.providers)),
         daytona: packed.mode,
       },
     });
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "pack",
         "daytona",
@@ -209,21 +227,27 @@ export async function createAndRun(input: CreateRunInput): Promise<Run> {
     );
 
     await appendEvent(
-      run.id,
+      runId,
       ev(
         "persist",
         "convex",
         "info",
         modes.convex === "live"
-          ? "Convex is on. Board can update live."
-          : "Saving runs to .data/runs until Convex URL is set",
+          ? "Convex dual-write on (file store still primary until board is wired to Convex queries)"
+          : "Saving runs under .data (set NEXT_PUBLIC_CONVEX_URL + npx convex deploy for durable cloud board)",
       ),
     );
 
-    return (await patchRun(run.id, { status: "completed" }))!;
+    return (await patchRun(runId, { status: "completed" }))!;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Run failed";
-    await appendEvent(run.id, ev("error", "system", "error", message));
-    return (await patchRun(run.id, { status: "failed", error: message }))!;
+    await appendEvent(runId, ev("error", "system", "error", message));
+    return (await patchRun(runId, { status: "failed", error: message }))!;
   }
+}
+
+/** @deprecated Prefer createQueuedRun + executeRun for async boards. */
+export async function createAndRun(input: CreateRunInput): Promise<Run> {
+  const run = await createQueuedRun(input);
+  return executeRun(run.id);
 }
