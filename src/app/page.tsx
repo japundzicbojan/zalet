@@ -18,7 +18,7 @@ export default function HomePage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-[var(--accent)]">
             For solo founders
           </p>
-          <h1 className="mt-2 font-[family-name:var(--font-display)] text-6xl leading-none tracking-tight md:text-7xl">
+          <h1 className="font-display mt-2 text-6xl leading-[0.92] tracking-tight md:text-7xl">
             Zalet
           </h1>
         </div>
@@ -29,10 +29,10 @@ export default function HomePage() {
 
       <section className="grid flex-1 items-end gap-12 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="animate-rise-delay max-w-xl space-y-5 pb-2">
-          <h2 className="font-[family-name:var(--font-display)] text-3xl leading-[1.15] tracking-tight md:text-[2.6rem]">
+          <h2 className="font-display text-3xl leading-[1.12] tracking-tight md:text-[2.75rem]">
             You built the product. Here’s a week of posts you can actually film.
           </h2>
-          <p className="max-w-md text-[15px] leading-relaxed text-[var(--muted)]">
+          <p className="max-w-md text-[15px] leading-[1.65] text-[var(--muted)]">
             Drop your URL. Walk away with a plan, scripts in your voice, a few
             stills, and a zip you can open in Daytona.
           </p>

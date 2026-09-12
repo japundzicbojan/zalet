@@ -54,7 +54,7 @@ export function RunForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <p className="font-[family-name:var(--font-display)] text-xl tracking-tight">
+        <p className="font-display text-xl tracking-tight">
           Start a zalet
         </p>
         <p className="text-sm text-[var(--muted)]">

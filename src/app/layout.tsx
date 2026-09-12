@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Instrument_Serif, Sora } from "next/font/google";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Instrument_Serif({
   subsets: ["latin"],
+  weight: "400",
   variable: "--font-display",
 });
 
-const sans = Manrope({
+const sans = Sora({
   subsets: ["latin"],
   variable: "--font-sans",
 });
@@ -23,7 +24,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${sans.variable} relative antialiased`}>
+      <body
+        className={`${display.variable} ${sans.variable} relative antialiased`}
+      >
         <div className="relative z-[1] min-h-screen">{children}</div>
       </body>
     </html>

@@ -105,7 +105,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
   if (error) {
     return (
       <div className="border border-[var(--danger)]/20 bg-[var(--danger)]/5 px-4 py-5">
-        <p className="font-[family-name:var(--font-display)] text-2xl">
+        <p className="font-display text-2xl">
           Couldn’t open this board
         </p>
         <p className="mt-2 text-sm text-[var(--danger)]">{error}</p>
@@ -145,7 +145,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
 
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl space-y-2">
-            <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight md:text-5xl">
+            <h1 className="font-display text-4xl tracking-tight md:text-5xl">
               {run.product?.name || "Still reading your product"}
             </h1>
             <p className="text-[15px] leading-relaxed text-[var(--muted)]">
@@ -232,7 +232,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
           <div className="mb-3 flex items-end justify-between gap-3">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
+            <h2 className="font-display text-2xl tracking-tight">
               What the agent did
             </h2>
             {running ? (
@@ -263,7 +263,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
         </div>
 
         <div>
-          <h2 className="mb-3 font-[family-name:var(--font-display)] text-2xl tracking-tight">
+          <h2 className="mb-3 font-display text-2xl tracking-tight">
             Stills
           </h2>
           {run.creatives.length ? (
@@ -300,7 +300,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
       {run.research ? (
         <section className="space-y-5">
           <div className="max-w-3xl">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
+            <h2 className="font-display text-2xl tracking-tight">
               What you should post
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
@@ -347,7 +347,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
         </section>
       ) : running ? (
         <section>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
+          <h2 className="font-display text-2xl tracking-tight">
             What you should post
           </h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
@@ -358,7 +358,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
 
       {run.campaign ? (
         <section className="space-y-4">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
+          <h2 className="font-display text-2xl tracking-tight">
             Seven days of posts
           </h2>
           <div className="overflow-x-auto border border-[var(--line)] bg-white/50">
@@ -385,7 +385,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
 
       {run.campaign?.scripts?.length ? (
         <section className="space-y-4">
-          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
+          <h2 className="font-display text-2xl tracking-tight">
             Scripts
           </h2>
           <div className="divide-y divide-[var(--line)] border border-[var(--line)] bg-white/55">
