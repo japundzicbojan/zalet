@@ -27,47 +27,47 @@ function mockResearch(brief: ProductBrief): TrendResearch {
   ];
 
   return {
-    summary: `For ${brief.name}, lean into raw founder UGC: show the before/after of the product loop, not polished brand ads.`,
+    summary: `For founders promoting ${brief.name} themselves: skip polished brand ads. Film raw founder UGC that shows the product loop, pain → fix, and a clear CTA.`,
     trends: [
+      {
+        title: "Founder-as-creator beats brand ads",
+        insight:
+          "Audiences trust a founder on camera more than a studio spot — especially for early products.",
+        source: "mock",
+      },
       {
         title: "Problem-first hooks",
         insight:
-          "Top short-form posts open on a specific pain in the first 2 seconds, then reveal the product.",
+          "Top short-form promo opens on a specific buyer pain in 2 seconds, then shows your product solving it.",
         source: "mock",
       },
       {
-        title: "Screen-record demos",
+        title: "Screen-record proof",
         insight:
-          "Workflow walkthroughs with voiceover outperform talking-head-only clips for tooling products.",
-        source: "mock",
-      },
-      {
-        title: "Build-in-public cadence",
-        insight:
-          "Weekly shipped-update clips build trust faster than one-off launch dumps.",
+          "Founders who screen-record the real workflow get more saves than talking-head-only pitches.",
         source: "mock",
       },
     ],
     recommendations: [
       {
-        format: "Talking-head + screen record hybrid (30–45s)",
+        format: "Founder talking-head + screen record (30–45s)",
         platform: "tiktok / ig-reels",
-        why: "Best mix of trust (face) and proof (product).",
-        hookIdea: `I used to burn nights on launch content — then I tried ${brief.name}.`,
+        why: "You (the founder) are the ad — face for trust, product for proof.",
+        hookIdea: `I built ${brief.name} because I was tired of [pain]. Here's the 20-second fix.`,
         priority: "high",
       },
       {
-        format: "3-post carousel / thread",
+        format: "3-post teach + soft CTA",
         platform: "x / linkedin",
-        why: "Lets you teach one insight and soft-CTA the waitlist.",
-        hookIdea: `3 things founders get wrong in week-1 content (and what ${brief.name} fixes).`,
+        why: "Founders win distribution by teaching, then pitching their product.",
+        hookIdea: `3 mistakes I made before ${brief.name} — and what I ship instead.`,
         priority: "high",
       },
       {
         format: "Before/after split",
         platform: "ig-reels",
-        why: "Visual contrast travels well without heavy editing.",
-        hookIdea: "Left: blank calendar. Right: 7 days packed.",
+        why: "Simple visual promo founders can film on a phone.",
+        hookIdea: "Left: chaos. Right: same job with our product.",
         priority: "medium",
       },
     ],
@@ -145,9 +145,9 @@ async function searchAngles(
   brief: ProductBrief,
   icp?: string,
 ): Promise<Angle[]> {
-  const query = `UGC marketing angles for ${brief.name} targeting ${
-    icp || brief.audience || "founders"
-  }: ${brief.oneLiner}`;
+  const query = `Founder-led UGC and organic promo angles for advertising "${brief.name}" (${brief.oneLiner}) to ${
+    icp || brief.audience || "their ideal customers"
+  }. Focus on content the product's founder can film themselves — not agency ads.`;
 
   const res = await fetch("https://api.exa.ai/search", {
     method: "POST",
@@ -187,9 +187,9 @@ async function answerTrends(
   recommendations: ContentRec[];
   citations: { title?: string; url?: string }[];
 } | null> {
-  const query = `What short-form UGC and social content trends are working right now for a product like "${brief.name}" (${brief.oneLiner}) targeting ${
-    icp || brief.audience || "early-stage founders"
-  }? Recommend the best content formats, platforms, and hook ideas for the next 7 days.`;
+  const query = `A founder wants to advertise their own product "${brief.name}" (${brief.oneLiner}) to ${
+    icp || brief.audience || "their ideal customers"
+  } with no marketing team. What short-form UGC and organic social trends work right now for founder-led product promotion? Recommend formats, platforms, and hook ideas they can film themselves over the next 7 days.`;
 
   const res = await fetch("https://api.exa.ai/answer", {
     method: "POST",
@@ -202,7 +202,7 @@ async function answerTrends(
       text: true,
       model: "exa",
       systemPrompt:
-        "Focus on actionable short-form / UGC marketing trends. Prefer recent sources. Be specific about formats and platforms.",
+        "Audience is founders promoting THEIR OWN product (self-serve marketing / organic ads). Prefer actionable short-form UGC they can create alone. Avoid agency/brand-campaign advice. Be specific about formats and platforms.",
       outputSchema,
     }),
   });

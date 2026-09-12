@@ -12,7 +12,7 @@ const GOALS = [
 export function RunForm() {
   const router = useRouter();
   const [url, setUrl] = useState("https://www.notion.so");
-  const [icp, setIcp] = useState("early-stage founders");
+  const [icp, setIcp] = useState("solo founders buying tools to ship faster");
   const [goal, setGoal] = useState<(typeof GOALS)[number]["value"]>("launch");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +60,12 @@ export function RunForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block space-y-2">
           <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-            ICP
+            Who you sell to
           </span>
           <input
             value={icp}
             onChange={(e) => setIcp(e.target.value)}
+            placeholder="e.g. PMs at Series A startups"
             className="w-full rounded-xl border border-[var(--line)] bg-[#171410] px-4 py-3 outline-none ring-[var(--accent)] focus:ring-2"
           />
         </label>
@@ -97,10 +98,11 @@ export function RunForm() {
         disabled={busy}
         className="inline-flex w-full items-center justify-center rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[#1a1208] transition hover:brightness-110 disabled:opacity-60 sm:w-auto"
       >
-        {busy ? "Running agent stack…" : "Napravi zalet"}
+        {busy ? "Building your promo week…" : "Napravi zalet"}
       </button>
       <p className="text-xs text-[var(--muted)]">
-        Firecrawl → Exa → xAI/Grok → Fal → Daytona. Missing keys = labeled mocks.
+        Built for founders advertising their own product. Firecrawl → Exa → Grok
+        → Fal → Daytona.
       </p>
     </form>
   );

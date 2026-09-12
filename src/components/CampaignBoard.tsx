@@ -34,7 +34,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
     <div className="space-y-10">
       <header className="space-y-3">
         <p className="text-xs uppercase tracking-[0.22em] text-[var(--accent)]">
-          Campaign board · {run.status}
+          Founder promo board · {run.status}
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight md:text-5xl">
           {run.product?.name || "Zalet run"}

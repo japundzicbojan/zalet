@@ -13,9 +13,9 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Zalet — founder UGC strategist agent",
+  title: "Zalet — advertise your product as a founder",
   description:
-    "Paste a product URL. Firecrawl, Exa, Grok, Fal, and Daytona ship a 7-day UGC campaign board.",
+    "For founders promoting their own product. Paste a URL → 7-day founder-led UGC plan, scripts, creatives, packed in Daytona.",
 };
 
 export default function RootLayout({

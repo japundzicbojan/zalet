@@ -20,11 +20,12 @@ export default function HomePage() {
       <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
         <div className="space-y-5">
           <h2 className="max-w-xl font-[family-name:var(--font-display)] text-3xl leading-tight md:text-4xl">
-            The run-up before launch. URL in, week of UGC out.
+            For founders who need to advertise their product — without a marketing team.
           </h2>
           <p className="max-w-lg text-[var(--muted)]">
-            An agent researches your product, writes a 7-day plan and scripts,
-            generates creatives, then packs everything inside a Daytona sandbox.
+            Paste your product URL. The agent researches what content is working,
+            writes a 7-day founder-led promo plan and scripts you can film,
+            generates creatives, then packs the campaign in a Daytona sandbox.
           </p>
         </div>
         <div className="rounded-3xl border border-[var(--line)] bg-[var(--panel)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.35)]">

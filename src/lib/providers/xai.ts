@@ -43,32 +43,32 @@ function mockCampaign(
   });
 
   return {
-    positioning: `${brief.name} is the run-up before launch — ${brief.oneLiner}`,
+    positioning: `${brief.name} — founder-led promo for the first week of attention. ${brief.oneLiner}`,
     week,
     scripts: [
       {
         dayRef: 1,
         language: "en",
-        hookText: week[0].hook,
+        hookText: `I built ${brief.name} because I was tired of guessing my own marketing.`,
         runtimeSec: 22,
         beats: [
           {
             t: 0,
-            visual: "Phone selfie, messy desk",
-            vo: week[0].hook,
-            onScreen: "No marketing team?",
+            visual: "Founder selfie, messy desk",
+            vo: `I built ${brief.name}. I still had to advertise it myself.`,
+            onScreen: "No marketing team",
           },
           {
             t: 6,
-            visual: "Screen record: paste URL",
-            vo: `I dropped ${brief.name}'s URL into Zalet.`,
-            onScreen: "URL → campaign",
+            visual: "Screen record: product demo",
+            vo: "So I filmed the product loop — pain, fix, CTA.",
+            onScreen: "Founder = the ad",
           },
           {
             t: 12,
-            visual: "Board with 7 cards",
-            vo: "Got a week of hooks, scripts, and creatives.",
-            onScreen: "7-day board",
+            visual: "7-day board cards",
+            vo: "Now I have a week of hooks I can actually post.",
+            onScreen: "7-day promo",
           },
           {
             t: 18,
@@ -82,47 +82,47 @@ function mockCampaign(
       {
         dayRef: 3,
         language: "en",
-        hookText: `Agencies charge weeks. ${brief.name} founders need today.`,
+        hookText: `Agencies sell timelines. I needed users this week for ${brief.name}.`,
         runtimeSec: 20,
         beats: [
           {
             t: 0,
-            visual: "Split: agency vs solo",
-            vo: "Agency timeline vs founder timeline.",
-            onScreen: "2 weeks vs 90s",
+            visual: "Split: agency vs founder",
+            vo: "Agency calendar vs founder calendar.",
+            onScreen: "2 weeks vs today",
           },
           {
             t: 7,
-            visual: "UGC stills grid",
-            vo: "Zalet ships scripts and creatives in one pass.",
-            onScreen: "Scripts + creatives",
+            visual: "UGC stills + script",
+            vo: "I scripted three clips I can shoot on my phone.",
+            onScreen: "Phone-ready ads",
           },
           {
             t: 14,
             visual: "CTA card",
-            vo: "Paste your URL. Steal the week.",
-            onScreen: "Paste URL",
+            vo: week[0].cta,
+            onScreen: week[0].cta,
           },
         ],
-        cta: "Paste your URL",
+        cta: week[0].cta,
       },
       {
         dayRef: 5,
         language: "sr",
-        hookText: `Imam proizvod. Nemam marketing tim. ${brief.name} treba zalet.`,
+        hookText: `Imam proizvod. Nemam marketing tim. ${brief.name} moram sam da reklamiram.`,
         runtimeSec: 21,
         beats: [
           {
             t: 0,
-            visual: "Selfie, balcony",
-            vo: "Imam proizvod, nemam marketing tim.",
+            visual: "Selfie, balkon",
+            vo: "Imam proizvod. Nemam marketing tim.",
             onScreen: "Founder mode",
           },
           {
             t: 7,
-            visual: "Trace: Firecrawl → Daytona",
-            vo: "Agent istraži, napiše plan, spakuje kampanju.",
-            onScreen: "Agent + Daytona",
+            visual: "Snimak ekrana proizvoda",
+            vo: "Zato snimam sam: problem, rešenje, poziv na akciju.",
+            onScreen: "Ja = reklama",
           },
           {
             t: 14,
@@ -330,9 +330,12 @@ export async function generateCampaign(opts: {
     };
   }
 
-  const system = `You are a sharp founder marketing strategist for early-stage products.
-You MUST ground the 7-day plan in the provided Exa trend research and content recommendations.
-Prefer the recommended formats/platforms/hooks when they fit the product.
+  const system = `You are a sharp founder-led growth strategist.
+The USER is a founder advertising THEIR OWN product with no marketing team.
+Write a 7-day promo plan and scripts THEY can film themselves (selfie, screen record, phone camera).
+Do NOT write agency brand-ad briefs. Soft-sell is fine; every day must promote the product toward the goal.
+Ground the plan in the Exa trend research and content recommendations.
+Prefer recommended formats/platforms/hooks when they fit.
 Return ONLY a JSON object with EXACTLY these top-level keys:
 {
   "positioning": string,
@@ -363,11 +366,16 @@ Return ONLY a JSON object with EXACTLY these top-level keys:
 Rules:
 - Exactly 7 items in week (days 1..7).
 - Exactly 3 scripts; one MUST have language "sr" (Serbian), two "en".
+- Scripts are spoken by the founder (first person: I/we built…, here's how…).
 - Map at least 3 week days to Exa content recommendations (format + platform + hook).
+- CTA must push the product goal (waitlist / launch / first users).
 - No markdown, no commentary, JSON only.`;
 
   const user = JSON.stringify({
+    role: "founder_promoting_own_product",
     product: opts.brief,
+    sellTo: opts.icp,
+    goal: opts.goal,
     angles: opts.angles,
     trendResearch: opts.research
       ? {
@@ -376,8 +384,6 @@ Rules:
           contentRecommendations: opts.research.recommendations,
         }
       : undefined,
-    icp: opts.icp,
-    goal: opts.goal,
   });
 
   const primary = process.env.XAI_MODEL || "grok-4.3";
