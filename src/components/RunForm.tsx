@@ -121,7 +121,7 @@ export function RunForm() {
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex w-full items-center justify-center bg-[var(--ink)] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[var(--accent)] disabled:cursor-wait disabled:opacity-70 sm:w-auto"
+        className="inline-flex w-full items-center justify-center bg-[var(--ink)] px-5 py-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:text-[#f4fbfa] disabled:cursor-wait disabled:opacity-70 sm:w-auto"
       >
         {busy ? (
           <span className="inline-flex items-center gap-2">

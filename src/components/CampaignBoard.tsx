@@ -160,7 +160,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
                 href={run.daytona.previewUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="border border-[var(--ink)] bg-[var(--ink)] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[var(--accent)]"
+                className="border border-[var(--ink)] bg-[var(--ink)] px-3 py-2 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:text-[#f4fbfa]"
               >
                 Open pack preview
               </a>
