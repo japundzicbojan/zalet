@@ -108,30 +108,30 @@ function mockCampaign(
       },
       {
         dayRef: 5,
-        language: "sr",
-        hookText: `Imam proizvod. Nemam marketing. ${brief.name} reklamiram sam.`,
+        language: "en",
+        hookText: `I have a product. No marketing team. I advertise ${brief.name} myself.`,
         runtimeSec: 21,
         beats: [
           {
             t: 0,
-            visual: "Selfie na balkonu",
-            vo: "Imam proizvod. Nemam marketing tim.",
-            onScreen: "Samo ja",
+            visual: "Balcony selfie",
+            vo: "I have a product. I do not have a marketing team.",
+            onScreen: "Just me",
           },
           {
             t: 7,
-            visual: "Snimak ekrana proizvoda",
-            vo: "Snimam sam: problem, rešenje, poziv.",
-            onScreen: "Ja snimam",
+            visual: "Product screen recording",
+            vo: "I film it myself: problem, fix, ask.",
+            onScreen: "I film this",
           },
           {
             t: 14,
-            visual: "Tabla sa planom",
-            vo: "Sedam dana. Spremano za objavu.",
-            onScreen: "7 dana",
+            visual: "Plan on a whiteboard",
+            vo: "Seven days. Ready to post.",
+            onScreen: "7 days",
           },
         ],
-        cta: "Probaj sa svojim URL-om",
+        cta: "Try it with your own URL",
       },
     ],
     angles,
@@ -210,10 +210,11 @@ function normalizeCampaign(
         string,
         unknown
       >;
-      let language = asString(pick(s, ["language", "lang"]), i === 2 ? "sr" : "en")
+      let language = asString(pick(s, ["language", "lang"]), "en")
         .toLowerCase()
         .slice(0, 2);
-      if (language !== "sr" && language !== "en") language = i === 2 ? "sr" : "en";
+      if (language !== "sr" && language !== "en") language = "en";
+      language = "en";
 
       const beatsRaw = pick<unknown[]>(s, ["beats", "scenes", "shots"]) || [];
       const beats = (Array.isArray(beatsRaw) ? beatsRaw : []).map((b, bi) => {
@@ -253,9 +254,9 @@ function normalizeCampaign(
     },
   );
 
-  // Ensure one Serbian script
-  if (scripts.length && !scripts.some((s) => s.language === "sr")) {
-    scripts[scripts.length - 1].language = "sr";
+  // English-only board copy
+  for (const script of scripts) {
+    script.language = "en";
   }
 
   return {
@@ -352,7 +353,7 @@ Return ONLY JSON with these top-level keys:
   "scripts": [
     {
       "dayRef": number,
-      "language": "en" | "sr",
+      "language": "en",
       "hookText": string,
       "runtimeSec": number,
       "beats": [
@@ -364,7 +365,7 @@ Return ONLY JSON with these top-level keys:
 }
 Rules:
 - Exactly 7 week days (1..7).
-- Exactly 3 scripts. One language must be "sr" (Serbian). Two "en".
+- Exactly 3 scripts. Every language must be "en". Write every spoken line in English.
 - Use the Exa research when it helps.
 - Every day should push the product toward the goal.
 - JSON only. No markdown.`;

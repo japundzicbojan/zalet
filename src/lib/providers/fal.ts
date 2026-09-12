@@ -101,3 +101,72 @@ export async function generateCreatives(
         : `Fal partial/fallback (${errors[0]})`,
   };
 }
+
+export async function generateVideoClip(opts: {
+  brief: ProductBrief;
+  campaign: Campaign;
+}): Promise<{ creative: Creative; mode: "live" | "mock"; log: string }> {
+  const mode = providerMode().fal;
+  const hook =
+    opts.campaign.scripts[0]?.hookText ||
+    opts.campaign.week[0]?.hook ||
+    `${opts.brief.name} founder UGC`;
+  const prompt = `Vertical 9:16 UGC promo clip, handheld phone energy, authentic founder vibe, soft natural light, product: ${opts.brief.name}. Hook: ${hook}. No logos burned in.`;
+
+  if (mode === "mock") {
+    return {
+      mode,
+      log: "FAL_KEY missing → mock video placeholder.",
+      creative: {
+        id: nanoid(8),
+        kind: "video",
+        prompt,
+        url: svgDataUrl(`VIDEO · ${prompt.slice(0, 90)}`, 210),
+        provider: "fal",
+        mock: true,
+      },
+    };
+  }
+
+  fal.config({ credentials: falKey() });
+  try {
+    const result = await fal.subscribe("fal-ai/minimax/video-01-live", {
+      input: {
+        prompt,
+        prompt_optimizer: true,
+      },
+    });
+    const data = result.data as {
+      video?: { url?: string };
+      url?: string;
+    };
+    const url = data.video?.url || data.url || "";
+    if (!url) throw new Error("No video URL from Fal");
+    return {
+      mode: "live",
+      log: "Fal generated a UGC video clip",
+      creative: {
+        id: nanoid(8),
+        kind: "video",
+        prompt,
+        url,
+        provider: "fal",
+        mock: false,
+      },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "fal video error";
+    return {
+      mode: "mock",
+      log: `Fal video fallback (${message})`,
+      creative: {
+        id: nanoid(8),
+        kind: "video",
+        prompt,
+        url: svgDataUrl(`VIDEO · ${prompt.slice(0, 90)}`, 210),
+        provider: "fal",
+        mock: true,
+      },
+    };
+  }
+}

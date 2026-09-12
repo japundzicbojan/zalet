@@ -39,7 +39,7 @@ export function RunForm() {
         throw new Error(
           typeof data.error === "string"
             ? data.error
-            : "Couldn’t start. Check the URL and try again.",
+            : "Could not start. Check the URL and try again.",
         );
       }
       const id = data.run?.id || data.id;
@@ -54,11 +54,9 @@ export function RunForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <p className="font-display text-xl tracking-tight">
-          Start a zalet
-        </p>
+        <p className="font-display text-xl tracking-tight">Start a campaign</p>
         <p className="text-sm text-[var(--muted)]">
-          Board opens instantly. Trace fills as partners finish.
+          The board opens instantly. The agent trace fills as partners finish.
         </p>
       </div>
 
@@ -125,11 +123,11 @@ export function RunForm() {
       >
         {busy ? (
           <span className="inline-flex items-center gap-2">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-[1px] bg-white" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-[1px] bg-[#f4fbfa]" />
             Opening your board
           </span>
         ) : (
-          "Napravi zalet"
+          "Create campaign"
         )}
       </button>
 

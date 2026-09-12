@@ -18,8 +18,9 @@ Zalet turns that URL into a week of posts you can film yourself.
 7. Watch the left trace fill: Firecrawl → Exa → xAI/Grok → Fal → Daytona.
 8. When **Ready**:
    - skim **Seven days of posts**
-   - open a **Script** (show the Serbian one)
+   - open a **Script** (English)
    - point at **Stills**
+   - click **Generate video** (optional Fal clip)
    - click **Open pack preview**
    - click **Download zip**
    - click **Copy board link** and say you’d send it to a co-founder

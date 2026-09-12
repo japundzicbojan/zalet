@@ -40,6 +40,11 @@ function eventTone(level: TraceEvent["level"]) {
   return "text-[var(--muted)]";
 }
 
+const btnSecondary =
+  "inline-flex h-10 items-center justify-center border border-[var(--line)] bg-white/80 px-3.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]";
+const btnPrimary =
+  "inline-flex h-10 items-center justify-center border border-[var(--ink)] bg-[var(--ink)] px-3.5 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:border-[var(--accent)]";
+
 function CopyBoardLink({ runId }: { runId: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -55,7 +60,7 @@ function CopyBoardLink({ runId }: { runId: string }) {
           /* ignore */
         }
       }}
-      className="border border-[var(--line)] bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]"
+      className={btnSecondary}
     >
       {copied ? "Link copied" : "Copy board link"}
     </button>
@@ -66,6 +71,8 @@ export function CampaignBoard({ runId }: { runId: string }) {
   const [run, setRun] = useState<Run | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openScript, setOpenScript] = useState<string | null>(null);
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const traceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,6 +108,37 @@ export function CampaignBoard({ runId }: { runId: string }) {
       state: phaseState(run, p.tools),
     }));
   }, [run]);
+
+  const stills = useMemo(
+    () => (run?.creatives || []).filter((c) => c.kind === "still"),
+    [run],
+  );
+  const videos = useMemo(
+    () => (run?.creatives || []).filter((c) => c.kind === "video"),
+    [run],
+  );
+
+  async function onGenerateVideo() {
+    if (!run || videoBusy) return;
+    setVideoBusy(true);
+    setVideoError(null);
+    try {
+      const res = await fetch(`/api/runs/${run.id}/video`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not generate video",
+        );
+      }
+      if (data.run) setRun(data.run);
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : "Video failed");
+    } finally {
+      setVideoBusy(false);
+    }
+  }
 
   if (error) {
     return (
@@ -143,7 +181,7 @@ export function CampaignBoard({ runId }: { runId: string }) {
           <span className="text-[var(--muted)]">Your promo board</span>
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl space-y-2">
             <h1 className="font-display text-4xl tracking-tight md:text-5xl">
               {run.product?.name || "Still reading your product"}
@@ -154,34 +192,46 @@ export function CampaignBoard({ runId }: { runId: string }) {
                 run.input.url}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {run.daytona?.previewUrl ? (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              {run.daytona?.previewUrl ? (
+                <a
+                  href={run.daytona.previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={btnPrimary}
+                >
+                  Open pack preview
+                </a>
+              ) : null}
+              {run.daytona?.zipReady ? (
+                <a href={`/api/runs/${run.id}/zip`} className={btnSecondary}>
+                  Download zip
+                </a>
+              ) : null}
+              {run.status === "completed" || run.product ? (
+                <button
+                  type="button"
+                  onClick={onGenerateVideo}
+                  disabled={videoBusy || !run.campaign}
+                  className={`${btnSecondary} disabled:cursor-wait disabled:opacity-60`}
+                >
+                  {videoBusy ? "Generating video…" : "Generate video"}
+                </button>
+              ) : null}
+              <CopyBoardLink runId={run.id} />
               <a
-                href={run.daytona.previewUrl}
+                href={run.input.url}
                 target="_blank"
                 rel="noreferrer"
-                className="border border-[var(--ink)] bg-[var(--ink)] px-3 py-2 text-sm font-semibold text-[#f4fbfa] transition hover:bg-[var(--accent)] hover:text-[#f4fbfa]"
+                className={btnSecondary}
               >
-                Open pack preview
+                Open product site
               </a>
+            </div>
+            {videoError ? (
+              <p className="text-xs text-[var(--danger)]">{videoError}</p>
             ) : null}
-            {run.daytona?.zipReady ? (
-              <a
-                href={`/api/runs/${run.id}/zip`}
-                className="border border-[var(--line)] bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)]"
-              >
-                Download zip
-              </a>
-            ) : null}
-            <CopyBoardLink runId={run.id} />
-            <a
-              href={run.input.url}
-              target="_blank"
-              rel="noreferrer"
-              className="border border-[var(--line)] bg-white/70 px-3 py-2 text-sm text-[var(--ink)] transition hover:border-[var(--accent)]"
-            >
-              Open product site
-            </a>
           </div>
         </div>
 
@@ -262,38 +312,79 @@ export function CampaignBoard({ runId }: { runId: string }) {
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-3 font-display text-2xl tracking-tight">
-            Stills
-          </h2>
-          {run.creatives.length ? (
-            <div className="grid grid-cols-3 gap-2">
-              {run.creatives.map((c) => (
-                <a
-                  key={c.id}
-                  href={c.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group overflow-hidden border border-[var(--line)] bg-white"
+        <div className="space-y-6">
+          <div>
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2 className="font-display text-2xl tracking-tight">Stills</h2>
+              {run.status === "completed" ? (
+                <button
+                  type="button"
+                  onClick={onGenerateVideo}
+                  disabled={videoBusy || !run.campaign}
+                  className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)] disabled:opacity-50"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.url}
-                    alt={c.prompt}
-                    className="aspect-[9/16] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                  />
-                </a>
-              ))}
+                  {videoBusy ? "Generating…" : "Generate video"}
+                </button>
+              ) : null}
             </div>
-          ) : (
-            <div className="flex aspect-[4/3] items-end border border-dashed border-[var(--line)] bg-white/40 p-4">
-              <p className="text-sm text-[var(--muted)]">
-                {running
-                  ? "Fal is cooking the stills."
-                  : "No stills on this run."}
-              </p>
+            {stills.length ? (
+              <div className="grid grid-cols-3 gap-2">
+                {stills.map((c) => (
+                  <a
+                    key={c.id}
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group overflow-hidden border border-[var(--line)] bg-white"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={c.url}
+                      alt={c.prompt}
+                      className="aspect-[9/16] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="flex aspect-[4/3] items-end border border-dashed border-[var(--line)] bg-white/40 p-4">
+                <p className="text-sm text-[var(--muted)]">
+                  {running
+                    ? "Fal is generating the stills."
+                    : "No stills on this run."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {videos.length ? (
+            <div>
+              <h2 className="mb-3 font-display text-2xl tracking-tight">
+                Video
+              </h2>
+              <div className="grid gap-3">
+                {videos.map((c) => (
+                  <div
+                    key={c.id}
+                    className="overflow-hidden border border-[var(--line)] bg-black"
+                  >
+                    {c.url.startsWith("data:") ? (
+                      <div className="flex aspect-[9/16] max-h-[420px] items-center justify-center bg-[#1a2428] p-4 text-center text-sm text-[#f4fbfa]">
+                        Video placeholder (Fal fallback)
+                      </div>
+                    ) : (
+                      <video
+                        src={c.url}
+                        controls
+                        playsInline
+                        className="aspect-[9/16] max-h-[420px] w-full object-contain"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
       </section>
 
@@ -401,7 +492,9 @@ export function CampaignBoard({ runId }: { runId: string }) {
                   >
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--accent)]">
-                        Day {s.dayRef} · {s.language} · {s.runtimeSec}s
+                        Day {s.dayRef} ·{" "}
+                        {s.language === "sr" ? "Serbian" : "English"} ·{" "}
+                        {s.runtimeSec}s
                       </p>
                       <p className="mt-1 font-semibold">{s.hookText}</p>
                     </div>
