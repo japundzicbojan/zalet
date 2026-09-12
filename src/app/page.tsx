@@ -30,12 +30,14 @@ export default function HomePage() {
       <section className="grid flex-1 items-end gap-12 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="animate-rise-delay max-w-xl space-y-5 pb-2">
           <h2 className="font-display text-3xl leading-[1.12] tracking-tight md:text-[2.75rem]">
-            Founders build. Zalet gives them a push.
+            Founders build. Zalet gives them{" "}
+            <span className="text-[var(--accent)]">a push</span>.
           </h2>
           <p className="max-w-md text-[15px] leading-[1.65] text-[var(--muted)]">
-            Paste your product URL. Get a full UGC content market strategy,
-            filming guide, and production pack: 7-day plan, scripts you can say
-            on camera, stills, and a zip ready to shoot.
+            Paste your product URL and walk away with a UGC market strategy,
+            day-by-day filming guide, on-camera scripts, stills, optional video,
+            and a zip pack. Then refine hooks, rewrite a script, or generate next
+            week on the same board.
           </p>
         </div>
 
